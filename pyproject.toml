@@ -1,0 +1,7 @@
+[project]
+name = "chem-balancer"
+version = "0.1.0"
+description = "Source code for chem-balancer video"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
