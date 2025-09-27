@@ -1,0 +1,9 @@
+[package]
+name = "chem-balancer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex = "1.11.3"
+strum = "0.27.2"
+strum_macros = "0.27.2"

@@ -1,0 +1,32 @@
+# Custom file
+test.*
+
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Virtual environment
+.venv/
+
+# Editor/IDE specific files
+.vscode/
+*.swp
+*.bak
+
+# Operating System generated files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Sensitive or temporary files
+.env
+instance/
+*.log
+
+# Added by cargo
+
+/target
