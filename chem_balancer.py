@@ -1,7 +1,7 @@
 """A parser for chemical formulas."""
 
 import re
-from typing import Iterable, NamedTuple
+from typing import Any, Counter, Iterable, NamedTuple
 from enum import Enum
 
 # Two letter element symbols should appear before one letter symbols to avoid partial matches
@@ -149,7 +149,7 @@ class Parser:
             count = int(token.value)
             self.advance()  # Consume NUMBER
 
-        return {"element": element, "count": count}
+        return {"symbol": element, "count": count}
 
     def parse_group_unit(self):
         """group_unit -> LPAREN formula RPAREN [NUMBER]"""
@@ -178,13 +178,61 @@ class Parser:
             "count": count,
         }
 
+class Calculator:
+    def __init__(self, ast: dict[str, Any]) -> None:
+        self.ast = ast
+
+    def calculate(self) -> Counter[str]:
+        return self._evaluate_formula(self.ast)
+
+    def _evaluate_element(self, element_info: dict[str, Any]) -> Counter[str]:
+        return Counter({element_info["symbol"]: element_info["count"]})
+
+    def _evaluate_term(self, term_info: dict[str, Any]) -> Counter[str]:
+        term_counter = Counter()
+        match term_info:
+            case {"symbol": _, "count": _}:
+                term_counter += self._evaluate_element(term_info)
+            case {"group": _, "count": _}:
+                term_counter += self._evaluate_group(term_info)
+        return term_counter
+
+    def _evaluate_group(self, group_info: dict[str, Any]) -> Counter[str]:
+        group_counter = self._evaluate_formula(group_info["group"])
+        multiplied_counter = Counter()
+        for element, count in group_counter.items():
+            multiplied_counter[element] = count * group_info["count"]
+        return multiplied_counter
+
+    def _evaluate_molecule(self, molecule_info: dict[str, Any]) -> Counter[str]:
+        molecule_counter = sum(
+            (self._evaluate_term(term) for term in molecule_info["terms"]), Counter()
+        )
+        molecule_counter["charge"] = molecule_info["charge"]
+
+        return molecule_counter
+
+    def _evaluate_formula(self, formula: dict[str, Any]) -> Counter[str]:
+        total_counter = Counter()
+        for molecule_info in formula["molecules"]:
+            molecule = molecule_info["molecule"]
+            count = molecule_info["count"]
+            molecule_counter = self._evaluate_molecule(molecule)
+            for element, qty in molecule_counter.items():
+                total_counter[element] += qty * count
+        return total_counter
+
+
+def get_chemical_composition(formula: str) -> Counter[str]:
+    tokens = tokenize(formula)
+    parser = Parser(tokens)
+    ast = parser.parse_formula()
+    calculator = Calculator(ast)
+    return calculator.calculate()
+
 
 if __name__ == "__main__":
     from pprint import pprint
 
-    formula = "Cu(en)2 2+ . 5H2O"
-    tokens = list(tokenize(formula))
-    pprint(tokens)
-    parser = Parser(tokens)
-    ast = parser.parse_formula()
-    pprint(ast)
+    formula = "CuSO4·5H2O"
+    pprint(get_chemical_composition(formula))
