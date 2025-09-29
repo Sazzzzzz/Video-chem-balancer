@@ -24,7 +24,7 @@ class TokenType(Enum):
     # Charge must be processed before NUMBER
     CHARGE = r"\d*[+-]"
     NUMBER = r"\d+"
-    DOT = r"·|\.|\*|·"
+    DOT = r"·|\.|\*"
     LPAREN = r"\("
     RPAREN = r"\)"
     LBRACKET = r"\["
