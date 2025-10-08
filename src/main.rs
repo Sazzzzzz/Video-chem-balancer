@@ -1,6 +1,6 @@
-use chem_balancer::parser::get_chemical_composition;
+use chem_balancer::parser::{get_ast, get_chemical_composition};
 fn main() {
-    let formulas = vec!["Cu2+", "NH4+"];
+    let formulas = vec!["Fe 3+", "NH4+"];
 
     for formula in formulas {
         println!("\nFormula: {}", formula);
@@ -18,4 +18,5 @@ fn main() {
         }
         println!("{}", "-".repeat(40));
     }
+    println!("{:#?}", get_ast("KAl(SO4)2"));
 }

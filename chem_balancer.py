@@ -48,12 +48,17 @@ def tokenize(formula: str):
 
         match kind:
             case TokenType.ELEMENT:
-                # Second match to separate elements and self-defined groups
-                element_regex = r"|".join(ELEMENTS) + r"|[a-zA-Z]+"
-                yield from (
-                    Token(TokenType.ELEMENT, x.group())
-                    for x in re.finditer(element_regex, value)
-                )
+                # First split based on element regex
+                # push every unknown part as new Element token
+                pos = 0
+                element_regex = r"|".join(ELEMENTS)
+                for m in re.finditer(element_regex, value):
+                    if m.start() != pos:
+                        yield Token(TokenType.ELEMENT, value[pos : m.start()])
+                        yield Token(TokenType.ELEMENT, m.group())
+                        pos = m.end()
+                if pos != len(value):
+                    yield Token(TokenType.ELEMENT, value[pos:])
                 continue
             case TokenType.WHITESPACE:
                 continue
@@ -178,6 +183,7 @@ class Parser:
             "count": count,
         }
 
+
 class Calculator:
     def __init__(self, ast: dict[str, Any]) -> None:
         self.ast = ast
@@ -223,10 +229,14 @@ class Calculator:
         return total_counter
 
 
-def get_chemical_composition(formula: str) -> Counter[str]:
+def get_ast(formula: str) -> dict[str, Any]:
     tokens = tokenize(formula)
     parser = Parser(tokens)
-    ast = parser.parse_formula()
+    return parser.parse_formula()
+
+
+def get_chemical_composition(formula: str) -> Counter[str]:
+    ast = get_ast(formula)
     calculator = Calculator(ast)
     return calculator.calculate()
 
@@ -234,5 +244,6 @@ def get_chemical_composition(formula: str) -> Counter[str]:
 if __name__ == "__main__":
     from pprint import pprint
 
-    formula = "CuSO4·5H2O"
+    formula = "KAl(SO4)2"
     pprint(get_chemical_composition(formula))
+    pprint(get_ast(formula))

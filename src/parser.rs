@@ -2,7 +2,6 @@ use counter::Counter;
 use std::{str::FromStr, sync::LazyLock};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
-// todo: NH4+ error: charges not handled correctly
 #[derive(EnumIter, Debug, Display, EnumString, PartialEq, Clone)]
 pub enum TokenType {
     Element,
@@ -79,7 +78,7 @@ static TOKEN_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
 // todo: better strategy from string to TokenType
 // Lazy-initialized regex specifically for splitting element groups
 static ELEMENT_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
-    let element_regex_str = format!("{}|[a-zA-Z]+", ELEMENTS.join("|"));
+    let element_regex_str = format!("{}", ELEMENTS.join("|"));
     regex::Regex::new(&element_regex_str).unwrap()
 });
 
@@ -98,10 +97,23 @@ pub fn tokenize(formula: &str) -> Result<Vec<Token>, String> {
 
         // return tokens based on type
         match kind {
+            // First split based on element regex
+            // push every unknown part as new Element token
             TokenType::Element => {
+                let mut pos = 0;
                 ELEMENT_REGEX.find_iter(value).for_each(|m| {
+                    if m.start() != pos {
+                        tokens.push(Token::new(
+                            TokenType::Element,
+                            value[pos..m.start()].to_string(),
+                        ))
+                    }
                     tokens.push(Token::new(TokenType::Element, m.as_str().to_string()));
+                    pos = m.end();
                 });
+                if pos != value.len() {
+                    tokens.push(Token::new(TokenType::Element, value[pos..].to_string()))
+                }
             }
 
             TokenType::Whitespace => {} // Skip whitespace
@@ -216,40 +228,36 @@ impl Parser {
         let mut charge = 0;
         if let Some(
             token @ Token {
-                kind: TokenType::Charge,
+                kind: TokenType::Charge | TokenType::Number,
                 ..
             },
         ) = self.current_token()
         {
             charge = self.parse_charge(&token.value)?;
-            self.advance(); // Consume CHARGE
         }
 
         Ok(Molecule { terms, charge })
     }
-    /// charge -> "+" | "-" | NUMBER"+" | NUMBER"-"
-    fn parse_charge(&self, charge_str: &str) -> Result<i32, String> {
-        match charge_str {
+
+    /// CHARGE: \d*[+-]
+    fn parse_charge(&self, value: &str) -> Result<i32, String> {
+        match value {
             "+" => Ok(1),
             "-" => Ok(-1),
-            s if s.ends_with('+') => {
-                let num_part = &s[..s.len() - 1];
-                num_part
-                    .parse()
-                    .map_err(|_| "Invalid charge format".to_string())
+            _ if value.ends_with('+') || value.ends_with('-') => {
+                let (num_str, sign) = value.split_at(value.len() - 1);
+                let magnitude = if num_str.is_empty() {
+                    1
+                } else {
+                    num_str.parse::<i32>().map_err(|_| "Invalid charge number")?
+                };
+                Ok(if sign == "+" { magnitude } else { -magnitude })
             }
-            s if s.ends_with('-') => {
-                let num_part = &s[..s.len() - 1];
-                num_part
-                    .parse::<i32>()
-                    .map(|n| -n)
-                    .map_err(|_| "Invalid charge format".to_string())
-            }
-            _ => Err(format!("Invalid charge format: {}", charge_str)),
+            _ => Err("Invalid charge format".to_string()),
         }
     }
 
-    /// element_unit -> ELEMENT \[NUMBER\]
+    /// element_unit -> ELEMENT [NUMBER\]
     fn parse_element_unit(&mut self) -> Result<Term, String> {
         let element_token = self
             .current_token()
@@ -412,31 +420,48 @@ mod tests {
         }
     }
     #[test]
-    fn test_get_chemical_composition() {
-        let composition = get_chemical_composition("NH4+").unwrap();
+    fn test_get_chemical_composition_nh4() {
+        //* NH4+ must be input as "NH4 +"
+        //* if NH4+ is parsed as NH4 +, then Fe3+ would never be parsed as Fe 3+
+        let composition = get_chemical_composition("NH4 +").unwrap();
         assert_eq!(*composition.get("N").unwrap(), 1);
         assert_eq!(*composition.get("H").unwrap(), 4);
         assert_eq!(*composition.get("charge").unwrap(), 1);
-
+    }
+    #[test]
+    fn test_get_chemical_composition_ethanol() {
         let composition = get_chemical_composition("CH3CH2OH").unwrap();
         assert_eq!(*composition.get("C").unwrap(), 2);
         assert_eq!(*composition.get("H").unwrap(), 6);
         assert_eq!(*composition.get("O").unwrap(), 1);
+    }
+    #[test]
 
+    fn test_get_chemical_composition_alum() {
         let composition = get_chemical_composition("KAl(SO4)2.12H2O").unwrap();
         assert_eq!(*composition.get("K").unwrap(), 1);
         assert_eq!(*composition.get("Al").unwrap(), 1);
         assert_eq!(*composition.get("S").unwrap(), 2);
         assert_eq!(*composition.get("O").unwrap(), 20);
         assert_eq!(*composition.get("H").unwrap(), 24);
-
+    }
+    #[test]
+    fn test_get_chemical_composition_cu_en() {
         let composition = get_chemical_composition("Cu(en)2 2+").unwrap();
         assert_eq!(*composition.get("Cu").unwrap(), 1);
         assert_eq!(*composition.get("en").unwrap(), 2);
         assert_eq!(*composition.get("charge").unwrap(), 2);
-
+    }
+    #[test]
+    fn test_get_chemical_composition_etoet() {
         let composition = get_chemical_composition("EtOEt").unwrap();
         assert_eq!(*composition.get("Et").unwrap(), 2);
         assert_eq!(*composition.get("O").unwrap(), 1);
+    }
+    #[test]
+    fn test_get_chemical_composition_fe3() {
+        let composition = get_chemical_composition("Fe 3+").unwrap();
+        assert_eq!(*composition.get("Fe").unwrap(), 1);
+        assert_eq!(*composition.get("charge").unwrap(), 3);
     }
 }
