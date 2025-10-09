@@ -4,4 +4,7 @@ version = "0.1.0"
 description = "Source code for chem-balancer video"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "jupyter>=1.1.1",
+    "openai>=2.2.0",
+]

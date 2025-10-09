@@ -1,5 +1,6 @@
 # Custom file
 test.*
+/data/
 
 # Byte-code files
 *.pyc

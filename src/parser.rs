@@ -75,7 +75,6 @@ static TOKEN_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
         .join("|");
     regex::Regex::new(&regex_str).unwrap()
 });
-// todo: better strategy from string to TokenType
 // Lazy-initialized regex specifically for splitting element groups
 static ELEMENT_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
     let element_regex_str = format!("{}", ELEMENTS.join("|"));
