@@ -246,4 +246,3 @@ if __name__ == "__main__":
 
     formula = "KAl(SO4)2"
     pprint(get_chemical_composition(formula))
-    pprint(get_ast(formula))
