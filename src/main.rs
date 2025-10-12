@@ -1,6 +1,6 @@
 use chem_balancer::parser::{get_ast, get_chemical_composition};
 fn main() {
-    let formulas = vec!["Fe 3+", "NH4+"];
+    let formulas = vec!["Ag", "NH4+"];
 
     for formula in formulas {
         println!("\nFormula: {}", formula);
