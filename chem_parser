@@ -1,8 +1,9 @@
 """A parser for chemical formulas."""
 
 import re
-from typing import Any, Counter, NamedTuple, Optional
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Counter, NamedTuple, Optional
 
 # Two letter element symbols should appear before one letter symbols to avoid partial matches
 
@@ -308,11 +309,13 @@ class ChemicalCounter:
                 total_counter[element] += qty * count
         return total_counter
 
+def _get_chemical_composition_from_ast(ast: dict[str, Any]) -> Counter[str]:
+    calculator = ChemicalCounter(ast)
+    return calculator.calculate()
 
 def get_chemical_composition(formula: str) -> Counter[str]:
     ast = get_chemical_ast(formula)
-    calculator = ChemicalCounter(ast)
-    return calculator.calculate()
+    return _get_chemical_composition_from_ast(ast)
 
 
 class EquationParser:
@@ -395,9 +398,68 @@ def get_equation_ast(equation: str) -> dict[str, Any]:
     parser = EquationParser(tokens)
     return parser.parse()
 
+# I won't bother using pydantic here ...
+@dataclass
+class CountedFormula:
+    formula: str
+    count: int
+    composition: Counter[str]
+
+
+@dataclass
+class Equation:
+    """A chemical equation with reactants and products."""
+
+    reactants: list[CountedFormula]
+    products: list[CountedFormula]
+
+    def is_balanced(self) -> bool:
+        """Check if the equation is balanced."""
+        reactant_counts = sum((cf.composition for cf in self.reactants), Counter())
+        product_counts = sum((cf.composition for cf in self.products), Counter())
+        return reactant_counts == product_counts
+
+
+class EquationCalculator:
+    """Calculates the element counts for each side of a chemical equation based on its AST.
+    Returns a Equation dataclass instance."""
+
+    def __init__(self, ast: dict[str, Any]):
+        self.ast = ast
+
+    def calculate(self) -> Equation:
+        reactants = self._calculate_side(self.ast["reactants"])
+        products = self._calculate_side(self.ast["products"])
+        return Equation(reactants=reactants, products=products)
+
+    def _calculate_side(self, side: list[dict[str, Any]]) -> list[CountedFormula]:
+        counted_formulas = []
+        for compound_info in side:
+            formula = compound_info["molecule"]
+            count = compound_info["count"]
+            formula_str = formula["formula"]
+            composition = _get_chemical_composition_from_ast(formula)
+            # Multiply each element count by the stoichiometric coefficient
+            for element in composition:
+                composition[element] *= count
+            counted_formulas.append(
+                CountedFormula(
+                    formula=formula_str, count=count, composition=composition
+                )
+            )
+        return counted_formulas
+
+
+def get_equation_composition(equation: str) -> Equation:
+    ast = get_equation_ast(equation)
+    calculator = EquationCalculator(ast)
+    return calculator.calculate()
+
 
 if __name__ == "__main__":
     from pprint import pprint
 
-    equation = "2Ag+ + CO3 2- == Ag2CO3"
-    pprint(get_equation_ast(equation))
+    equation_str = "2Ag+ + CO3 2- == Ag2CO3"
+    equation = get_equation_composition(equation_str)
+    pprint(equation)
+    pprint(f"Is balanced? {equation.is_balanced()}")
