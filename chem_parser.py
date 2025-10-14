@@ -19,26 +19,21 @@ class Token(NamedTuple):
     # tokenizers should only carry str for values, leaving parsing for convertion if needed
     value: str
 
-    def is_positive(self) -> bool:
-        """Check if the token is TokenType.CHARGE and positive."""
-        return self.type == TokenType.CHARGE and self.value == "+"
-
-    def is_negative(self) -> bool:
-        """Check if the token is TokenType.CHARGE and negative."""
-        return self.type == TokenType.CHARGE and self.value == "-"
-
     def is_conjunction(self) -> bool:
         """Check if the token is `+` or `-`. Mainly for conjunction in chemical equations."""
-        return self.is_positive() or self.is_negative()
+        return self.type in {TokenType.PLUS, TokenType.MINUS}
 
 
 class TokenType(Enum):
+    # ELECTRON is the first token type
+    ELECTRON = r"e-"
     ELEMENT = r"[a-zA-Z]+"
     # EQUALS must be processed before CHARGE
+    MINUS = r"-"
+    PLUS = r"\+"
     EQUALS = r"==|=|->|⇌|⇄"
     # Charge must be processed before NUMBER
     # Then sorted by frequency of use
-    CHARGE = r"\d*[+-]"
     NUMBER = r"\d+"
     DOT = r"·|\.|\*"
     LPAREN = r"\("
@@ -48,8 +43,20 @@ class TokenType(Enum):
     LBRACE = r"\{"
     RBRACE = r"\}"
     WHITESPACE = r"[ \t]+"
-    # MISMATCH should always be last; it matches any character and will mask valid tokens if placed earlier.
+    # MISMATCH should always be last; it matches any character
     MISMATCH = r"."
+
+
+BRACKET_PAIRS = {
+    TokenType.LPAREN: TokenType.RPAREN,
+    TokenType.LBRACKET: TokenType.RBRACKET,
+    TokenType.LBRACE: TokenType.RBRACE,
+}
+
+
+def scale_counter(c: Counter, k: int) -> Counter:
+    """Helper function to multiply all counts in a Counter by k."""
+    return Counter({key: value * k for key, value in c.items()})
 
 
 def tokenize(formula: str):
@@ -76,8 +83,8 @@ def tokenize(formula: str):
                 if pos != len(value):
                     yield Token(TokenType.ELEMENT, value[pos:])
                 continue
-            case TokenType.WHITESPACE:
-                continue
+            # case TokenType.WHITESPACE:
+            #     continue
             case TokenType.MISMATCH:
                 raise RuntimeError(f"{value!r} unexpected")
 
@@ -86,17 +93,13 @@ def tokenize(formula: str):
 
 class FormulaParser:
     """A LL(2) parser for chemical formulas. Implements the following grammar:
-    + `formula -> molecule (DOT [NUMBER] molecule)*`
-    + `molecule -> term+ [CHARGE]`
+    + `formula -> charged_molecule (DOT [NUMBER] charged_molecule)*`
+    + `charged_molecule = molecule [charge]`
+    + `molecule -> term+`
+    + `charge -> [NUMBER] (PLUS | MINUS)`
     + `term -> element_unit | group_unit`
     + `element_unit -> ELEMENT [NUMBER]`
     + `group_unit -> LPAREN molecule RPAREN [NUMBER]`"""
-
-    BRACKET_PAIRS = {
-        TokenType.LPAREN: TokenType.RPAREN,
-        TokenType.LBRACKET: TokenType.RBRACKET,
-        TokenType.LBRACE: TokenType.RBRACE,
-    }
 
     def __init__(
         self,
@@ -109,32 +112,39 @@ class FormulaParser:
         self.current_token: Optional[Token] = self.tokens[0] if tokens else None
 
     def advance(self) -> None:
-        """Moves to the next token."""
+        """Moves to the next token. Ignoring all whitespaces"""
         self.pos += 1
-        try:
-            self.current_token = self.tokens[self.pos]
-        except IndexError:
-            self.current_token = None
+        while self.pos < len(self.tokens):
+            token = self.tokens[self.pos]
+            if token.type != TokenType.WHITESPACE:
+                self.current_token = token
+                return
+            self.pos += 1
+        self.current_token = None
 
     def peek(self, offset: int = 1) -> Token | None:
-        """Peeks ahead in the token stream without advancing."""
+        """Peeks ahead in the token stream without advancing. Does NOT ignore whitespaces."""
         peek_position = self.pos + offset
         # Sadly Python doesn't have indexing with default value
         if peek_position < len(self.tokens):
             return self.tokens[peek_position]
         return None
 
+    def peek_non_whitespace(self, offset: int = 1) -> Token | None:
+        """Peeks ahead in the token stream without advancing. Ignores whitespaces."""
+        peek_position = self.pos + offset
+        while peek_position < len(self.tokens):
+            token = self.tokens[peek_position]
+            if token.type != TokenType.WHITESPACE:
+                return token
+            peek_position += 1
+        return None
+
     def parse_formula(self):
         """formula -> molecule (DOT molecule)*"""
-        molecules = [{"molecule": self.parse_molecule(), "count": 1}]
+        molecules = [{"molecule": self.parse_charged_molecule(), "count": 1}]
 
         while (token := self.current_token) and token.type == TokenType.DOT:
-            # Stop if we're parsing an equation and hit equation delimiters
-            if self.is_parsing_equation and (
-                token.type == TokenType.EQUALS or token.is_conjunction()
-            ):
-                break
-
             self.advance()  # Consume DOT
             count = 1
             if (token := self.current_token) and token.type == TokenType.NUMBER:
@@ -142,7 +152,7 @@ class FormulaParser:
                 self.advance()  # Consume NUMBER
             molecules.append(
                 {
-                    "molecule": self.parse_molecule(),
+                    "molecule": self.parse_charged_molecule(),
                     "count": count,
                 }
             )
@@ -153,12 +163,38 @@ class FormulaParser:
             "formula": "".join(token.value for token in self.tokens[: self.pos]),
         }
 
-    def parse_molecule(self):
-        """molecule -> term+ [CHARGE]"""
-        terms = []
-        while (
-            token := self.current_token
-        ) and token.type in FormulaParser.BRACKET_PAIRS.keys() | {TokenType.ELEMENT}:
+    # To resolve the optional NUMBER token appearing before charges and after term and group
+    # We use the following strategy:
+    # When parsing `group_unit` or `element_unit` and encountering a number, look at the next character (with whitespace).
+    # If it is tightly before PLUS or MINUS, stop parsing and return to the caller parse_molecule. In this case charge processing
+    # function should be called immediately otherwise it is considered not legitimate grammar.
+    # Otherwise, consider it as a multiple of `group_unit` or `element_unit`, consume the token.
+
+    # In the charge processing function, if the first token is PLUS/MINUS and in chemical equation mode,
+    # look at the next non-empty character. If it is not PLUS/MINUS, consider this PLUS/MINUS as a connector and stop parsing.
+    # Otherwise, consider it as a single charge. If the first token is a number, parse it directly.
+    def parse_charged_molecule(self) -> dict[str, Any]:
+        """charged_molecule -> ELECTRON | (molecule [charge])"""
+        if (token := self.current_token) and token.type == TokenType.ELECTRON:
+            self.advance()  # Consume ELECTRON
+            return {"type": "molecule", "terms": [], "charge": -1}
+
+        molecule = self.parse_molecule()
+        charge = 0
+        if (token := self.current_token) and (
+            # Optional NUMBER before charge
+            token.type == TokenType.NUMBER or token.is_conjunction()
+        ):
+            charge = self.parse_charge()
+
+        return {"type": "molecule", "terms": molecule, "charge": charge}
+
+    def parse_molecule(self) -> list[dict[str, Any]]:
+        """molecule -> term+ [charge]"""
+        terms: list[dict[str, Any]] = []
+        while (token := self.current_token) and token.type in BRACKET_PAIRS.keys() | {
+            TokenType.ELEMENT
+        }:
             # Stop parsing if we encounter equation delimiters
             if self.is_parsing_equation and token.type in {TokenType.EQUALS}:
                 break
@@ -166,37 +202,28 @@ class FormulaParser:
                 break
             terms.append(self.parse_term())
 
-        charge = 0
-        if (token := self.current_token) and token.type == TokenType.CHARGE:
-            # In equation parsing mode, check if '+' or '-' is a conjunction (separator)
-            # rather than a charge by looking at what follows
-            if self.is_parsing_equation and token.value in ("+", "-"):
-                next_token = self.peek()
-                # If followed by a number (stoichiometric coefficient), element, or bracket,
-                # treat it as a conjunction, not a charge
-                if next_token and next_token.type in {
-                    TokenType.NUMBER,
-                    TokenType.ELEMENT,
-                    TokenType.LPAREN,
-                    TokenType.LBRACKET,
-                    TokenType.LBRACE,
-                }:
-                    return {"type": "molecule", "terms": terms, "charge": charge}
+        return terms
 
-            match token.value:
-                case "+":
-                    charge = 1
-                case "-":
-                    charge = -1
-                case _ if token.value.endswith("+"):
-                    charge = int(token.value[:-1]) if token.value[:-1] else 1
-                case _ if token.value.endswith("-"):
-                    charge = -int(token.value[:-1]) if token.value[:-1] else -1
-                case _:
-                    raise RuntimeError(f"Invalid charge format: {token.value}")
-            self.advance()  # Consume CHARGE
+    def parse_charge(self) -> int:
+        """charge -> [NUMBER] (PLUS | MINUS)"""
+        charge = 1
+        if (token := self.current_token) and token.type == TokenType.NUMBER:
+            charge = int(token.value)
+            self.advance()  # Consume NUMBER
 
-        return {"type": "molecule", "terms": terms, "charge": charge}
+        if (token := self.current_token) and token.is_conjunction():
+            if (
+                self.is_parsing_equation
+                and (next_token := self.peek_non_whitespace())
+                and not next_token.is_conjunction()
+            ):
+                return 0
+            sign = 1 if token.type == TokenType.PLUS else -1
+            charge *= sign
+            self.advance()  # Consume PLUS or MINUS
+        else:
+            raise RuntimeError(f"Expected PLUS or MINUS but found {token}")
+        return charge
 
     def parse_term(self):
         """term -> element_unit | group_unit"""
@@ -207,7 +234,7 @@ class FormulaParser:
         match token.type:
             case TokenType.ELEMENT:
                 return self.parse_element_unit()
-            case bracket if bracket in FormulaParser.BRACKET_PAIRS:
+            case bracket if bracket in BRACKET_PAIRS:
                 return self.parse_group_unit()
             case _:
                 raise RuntimeError(f"Unexpected token {token} while parsing term")
@@ -221,19 +248,18 @@ class FormulaParser:
 
         count = 1  # Default count
         if (token := self.current_token) and token.type == TokenType.NUMBER:
+            if (t := self.peek()) and t.is_conjunction():
+                return {"symbol": element, "count": count}
             count = int(token.value)
             self.advance()  # Consume NUMBER
 
         return {"symbol": element, "count": count}
 
     def parse_group_unit(self):
-        """group_unit -> LPAREN formula RPAREN [NUMBER]"""
+        """group_unit -> LPAREN molecule RPAREN [NUMBER]"""
         left_bracket = self.current_token
-        assert (
-            left_bracket is not None
-            and left_bracket.type in FormulaParser.BRACKET_PAIRS
-        )
-        right_bracket_type = FormulaParser.BRACKET_PAIRS[left_bracket.type]
+        assert left_bracket is not None and left_bracket.type in BRACKET_PAIRS
+        right_bracket_type = BRACKET_PAIRS[left_bracket.type]
         self.advance()  # Consume left bracket
 
         molecule = self.parse_molecule()
@@ -247,6 +273,12 @@ class FormulaParser:
 
         count = 1  # Default group count
         if (token := self.current_token) and token.type == TokenType.NUMBER:
+            if (t := self.peek()) and t.is_conjunction():
+                return {
+                    "group": molecule,
+                    "brackets": (left_bracket.type, right_bracket.type),
+                    "count": count,
+                }
             count = int(token.value)
             self.advance()  # Consume NUMBER
 
@@ -280,38 +312,40 @@ class ChemicalCounter:
         match term_info:
             case {"symbol": _, "count": _}:
                 term_counter += self._evaluate_element(term_info)
-            case {"group": _, "count": _}:
+            case {"group": _, "count": _, "brackets": _}:
                 term_counter += self._evaluate_group(term_info)
         return term_counter
 
     def _evaluate_group(self, group_info: dict[str, Any]) -> Counter[str]:
-        group_counter = self._evaluate_molecule(group_info["group"])
-        multiplied_counter = Counter()
-        for element, count in group_counter.items():
-            multiplied_counter[element] = count * group_info["count"]
-        return multiplied_counter
+        group_counter = sum(
+            (self._evaluate_term(term) for term in group_info["group"]), Counter()
+        )
+        return scale_counter(group_counter, group_info["count"])
 
     def _evaluate_molecule(self, molecule_info: dict[str, Any]) -> Counter[str]:
         molecule_counter = sum(
-            (self._evaluate_term(term) for term in molecule_info["terms"]), Counter()
+            (self._evaluate_term(term) for term in molecule_info["terms"]),
+            Counter(),
         )
         molecule_counter["charge"] = molecule_info["charge"]
 
         return molecule_counter
 
     def _evaluate_formula(self, formula: dict[str, Any]) -> Counter[str]:
-        total_counter = Counter()
+        total_counter: Counter[str] = Counter()
         for molecule_info in formula["molecules"]:
             molecule = molecule_info["molecule"]
             count = molecule_info["count"]
             molecule_counter = self._evaluate_molecule(molecule)
-            for element, qty in molecule_counter.items():
-                total_counter[element] += qty * count
+            scaled_counter = scale_counter(molecule_counter, count)
+            total_counter.update(scaled_counter)
         return total_counter
+
 
 def _get_chemical_composition_from_ast(ast: dict[str, Any]) -> Counter[str]:
     calculator = ChemicalCounter(ast)
     return calculator.calculate()
+
 
 def get_chemical_composition(formula: str) -> Counter[str]:
     ast = get_chemical_ast(formula)
@@ -326,16 +360,19 @@ class EquationParser:
 
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
-        self.position = 0
-        self.current_token = self.tokens[self.position] if self.tokens else None
+        self.pos = 0
+        self.current_token = self.tokens[self.pos] if self.tokens else None
 
     def advance(self) -> None:
-        """Moves to the next token."""
-        self.position += 1
-        if self.position < len(self.tokens):
-            self.current_token = self.tokens[self.position]
-        else:
-            self.current_token = None
+        """Moves to the next token. Ignoring all whitespaces"""
+        self.pos += 1
+        while self.pos < len(self.tokens):
+            token = self.tokens[self.pos]
+            if token.type != TokenType.WHITESPACE:
+                self.current_token = token
+                return
+            self.pos += 1
+        self.current_token = None
 
     def parse_equation(self) -> dict[str, Any]:
         """equation -> compound_list EQUALS compound_list"""
@@ -365,7 +402,7 @@ class EquationParser:
         # * Although in theory by recognizing whitespaces and use methods like `next_non_whitespace_token`
         # * we can still refactor current code to a more rigorous one.
 
-        while (token := self.current_token) and token.is_positive():
+        while (token := self.current_token) and token.type == TokenType.PLUS:
             self.advance()  # Consume PLUS
             compounds.append(self.parse_stoichiometric_compound())
 
@@ -379,13 +416,13 @@ class EquationParser:
             self.advance()  # Consume NUMBER
 
         formula_parser = FormulaParser(
-            self.tokens[self.position :], is_parsing_equation=True
+            self.tokens[self.pos :], is_parsing_equation=True
         )
         formula = formula_parser.parse_formula()
         # Advance the main parser's position by the number of tokens consumed by the formula parser
-        self.position += formula_parser.pos
+        self.pos += formula_parser.pos
         self.current_token = (
-            self.tokens[self.position] if self.position < len(self.tokens) else None
+            self.tokens[self.pos] if self.pos < len(self.tokens) else None
         )
 
         return {"molecule": formula, "count": count}
@@ -393,10 +430,12 @@ class EquationParser:
     def parse(self) -> dict[str, Any]:
         return self.parse_equation()
 
+
 def get_equation_ast(equation: str) -> dict[str, Any]:
     tokens = list(tokenize(equation))
     parser = EquationParser(tokens)
     return parser.parse()
+
 
 # I won't bother using pydantic here ...
 @dataclass
@@ -415,33 +454,35 @@ class Equation:
 
     def is_balanced(self) -> bool:
         """Check if the equation is balanced."""
-        reactant_counts = sum((cf.composition for cf in self.reactants), Counter())
-        product_counts = sum((cf.composition for cf in self.products), Counter())
+        reactant_counts = sum(
+            (scale_counter(cf.composition, cf.count) for cf in self.reactants),
+            Counter(),
+        )
+        product_counts = sum(
+            (scale_counter(cf.composition, cf.count) for cf in self.products), Counter()
+        )
         return reactant_counts == product_counts
 
 
-class EquationCalculator:
+class EquationBuilder:
     """Calculates the element counts for each side of a chemical equation based on its AST.
     Returns a Equation dataclass instance."""
 
     def __init__(self, ast: dict[str, Any]):
         self.ast = ast
 
-    def calculate(self) -> Equation:
-        reactants = self._calculate_side(self.ast["reactants"])
-        products = self._calculate_side(self.ast["products"])
+    def build(self) -> Equation:
+        reactants = self._build_side(self.ast["reactants"])
+        products = self._build_side(self.ast["products"])
         return Equation(reactants=reactants, products=products)
 
-    def _calculate_side(self, side: list[dict[str, Any]]) -> list[CountedFormula]:
+    def _build_side(self, side: list[dict[str, Any]]) -> list[CountedFormula]:
         counted_formulas = []
         for compound_info in side:
             formula = compound_info["molecule"]
             count = compound_info["count"]
             formula_str = formula["formula"]
             composition = _get_chemical_composition_from_ast(formula)
-            # Multiply each element count by the stoichiometric coefficient
-            for element in composition:
-                composition[element] *= count
             counted_formulas.append(
                 CountedFormula(
                     formula=formula_str, count=count, composition=composition
@@ -450,16 +491,15 @@ class EquationCalculator:
         return counted_formulas
 
 
-def get_equation_composition(equation: str) -> Equation:
+def get_equation(equation: str) -> Equation:
     ast = get_equation_ast(equation)
-    calculator = EquationCalculator(ast)
-    return calculator.calculate()
+    return EquationBuilder(ast).build()
 
 
 if __name__ == "__main__":
     from pprint import pprint
 
-    equation_str = "2Ag+ + CO3 2- == Ag2CO3"
-    equation = get_equation_composition(equation_str)
-    pprint(equation)
-    pprint(f"Is balanced? {equation.is_balanced()}")
+    equation_str = "Fe 2+ + e- = Fe"
+    equation = get_equation(equation_str)
+    pprint(get_equation(equation_str))
+    pprint(f"The equation is {'' if equation.is_balanced() else 'not '}balanced")
