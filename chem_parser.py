@@ -1,9 +1,13 @@
 """A parser for chemical formulas."""
 
 import re
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Counter, NamedTuple, Optional
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Two letter element symbols should appear before one letter symbols to avoid partial matches
 
@@ -25,13 +29,15 @@ class Token(NamedTuple):
 
 
 class TokenType(Enum):
+    _PREPROCESSING = r"\(aq\)|\(s\)|\(l\)|\(g\)"
     # ELECTRON is the first token type
     ELECTRON = r"e-"
     ELEMENT = r"[a-zA-Z]+"
     # EQUALS must be processed before CHARGE
+    # Traditional '=' would be recognized as double bond and ignored
+    EQUALS = r"==|->|⇌|⇄"
     MINUS = r"-"
     PLUS = r"\+"
-    EQUALS = r"==|=|->|⇌|⇄"
     # Charge must be processed before NUMBER
     # Then sorted by frequency of use
     NUMBER = r"\d+"
@@ -83,10 +89,9 @@ def tokenize(formula: str):
                 if pos != len(value):
                     yield Token(TokenType.ELEMENT, value[pos:])
                 continue
-            # case TokenType.WHITESPACE:
-            #     continue
-            case TokenType.MISMATCH:
-                raise RuntimeError(f"{value!r} unexpected")
+            case TokenType.MISMATCH | TokenType._PREPROCESSING:
+                logger.warning(f"Unexpected character {value!r} in formula, skipping.")
+                continue
 
         yield Token(kind, value)
 
@@ -216,6 +221,7 @@ class FormulaParser:
                 self.is_parsing_equation
                 and (next_token := self.peek_non_whitespace())
                 and not next_token.is_conjunction()
+                and next_token.type != TokenType.EQUALS
             ):
                 return 0
             sign = 1 if token.type == TokenType.PLUS else -1
@@ -394,21 +400,17 @@ class EquationParser:
         """compound_list -> stoichiometric_compound (PLUS stoichiometric_compound)*"""
         compounds = [self.parse_stoichiometric_compound()]
 
-        # * The reason we use token.value == "+" instead of defining a PLUS token type is that
-        # * Fe3+ and NH4+ are impossible to distinguish
-        # * current solution is to force users to use space manually before charges
-        # * to use atomic symbols as PLUS, MINUS etc., we need LL(2) parsing for chemical formulas
-        # * Furthermore, we need to recognize whitespaces to identify compact charges like `3+`
-        # * Although in theory by recognizing whitespaces and use methods like `next_non_whitespace_token`
-        # * we can still refactor current code to a more rigorous one.
+        while (token := self.current_token) and token.is_conjunction():
+            is_neg_coeff: bool = True if token.type != TokenType.PLUS else False
 
-        while (token := self.current_token) and token.type == TokenType.PLUS:
             self.advance()  # Consume PLUS
-            compounds.append(self.parse_stoichiometric_compound())
+            compounds.append(self.parse_stoichiometric_compound(is_neg_coeff))
 
         return compounds
 
-    def parse_stoichiometric_compound(self) -> dict[str, Any]:
+    def parse_stoichiometric_compound(
+        self, invert_coeff: bool = False
+    ) -> dict[str, Any]:
         """stoichiometric_compound -> [NUMBER] formula"""
         count = 1  # Default count
         if (token := self.current_token) and token.type == TokenType.NUMBER:
@@ -424,7 +426,7 @@ class EquationParser:
         self.current_token = (
             self.tokens[self.pos] if self.pos < len(self.tokens) else None
         )
-
+        count = -count if invert_coeff else count
         return {"molecule": formula, "count": count}
 
     def parse(self) -> dict[str, Any]:
@@ -438,11 +440,15 @@ def get_equation_ast(equation: str) -> dict[str, Any]:
 
 
 # I won't bother using pydantic here ...
-@dataclass
+@dataclass()
 class CountedFormula:
     formula: str
     count: int
     composition: Counter[str]
+
+    def __lt__(self, other: "CountedFormula") -> bool:
+        # string comparison is fine for our purpose of sorting
+        return self.formula < other.formula
 
 
 @dataclass
@@ -451,6 +457,33 @@ class Equation:
 
     reactants: list[CountedFormula]
     products: list[CountedFormula]
+
+    def __str__(self) -> str:
+        reactant_strs = [
+            f"{cf.count if cf.count != 1 else ''}{cf.formula}" for cf in self.reactants
+        ]
+        product_strs = [
+            f"{cf.count if cf.count != 1 else ''}{cf.formula}" for cf in self.products
+        ]
+        # todo: In standard chemistry notation, should we use == or ->
+        s = " + ".join(reactant_strs) + " == " + " + ".join(product_strs)
+        return s.replace(" + -", " - ")
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Equation):
+            return NotImplemented
+        return (
+            self.reactants.sort() == value.reactants.sort()
+            and self.products.sort() == value.products.sort()
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                tuple(sorted((cf.formula, cf.count) for cf in self.reactants)),
+                tuple(sorted((cf.formula, cf.count) for cf in self.products)),
+            )
+        )
 
     def is_balanced(self) -> bool:
         """Check if the equation is balanced."""
@@ -481,7 +514,9 @@ class EquationBuilder:
         for compound_info in side:
             formula = compound_info["molecule"]
             count = compound_info["count"]
-            formula_str = formula["formula"]
+            formula_str = formula["formula"].strip()
+            if not formula_str:
+                raise RuntimeError("Empty formula in equation")
             composition = _get_chemical_composition_from_ast(formula)
             counted_formulas.append(
                 CountedFormula(
@@ -499,7 +534,6 @@ def get_equation(equation: str) -> Equation:
 if __name__ == "__main__":
     from pprint import pprint
 
-    equation_str = "Fe 2+ + e- = Fe"
-    equation = get_equation(equation_str)
-    pprint(get_equation(equation_str))
-    pprint(f"The equation is {'' if equation.is_balanced() else 'not '}balanced")
+    eq_str = "Cl2 + 2NaOH == ..."
+    eq = get_equation(eq_str)
+    pprint(eq.is_balanced())
