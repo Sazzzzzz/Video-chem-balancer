@@ -333,7 +333,8 @@ class ChemicalCounter:
             (self._evaluate_term(term) for term in molecule_info["terms"]),
             Counter(),
         )
-        molecule_counter["charge"] = molecule_info["charge"]
+        if charge := molecule_info.get("charge", 0):
+            molecule_counter["charge"] = charge
 
         return molecule_counter
 
@@ -452,25 +453,33 @@ class CountedFormula:
 
 
 @dataclass
-class Equation:
+class BaseEquation:
     """A chemical equation with reactants and products."""
 
     reactants: list[CountedFormula]
     products: list[CountedFormula]
 
     def __str__(self) -> str:
+        is_single_reactant, is_single_product = (
+            len(self.reactants) == 1,
+            len(self.products) == 1,
+        )
         reactant_strs = [
-            f"{cf.count if cf.count != 1 else ''}{cf.formula}" for cf in self.reactants
+            f"{cf.count if cf.count != 1 else ''}{cf.formula}"
+            for cf in self.reactants
+            if (cf.count != 0 or is_single_reactant)
         ]
         product_strs = [
-            f"{cf.count if cf.count != 1 else ''}{cf.formula}" for cf in self.products
+            f"{cf.count if cf.count != 1 else ''}{cf.formula}"
+            for cf in self.products
+            if (cf.count != 0 or is_single_product)
         ]
         # todo: In standard chemistry notation, should we use == or ->
         s = " + ".join(reactant_strs) + " == " + " + ".join(product_strs)
         return s.replace(" + -", " - ")
 
     def __eq__(self, value: object) -> bool:
-        if not isinstance(value, Equation):
+        if not isinstance(value, BaseEquation):
             return NotImplemented
         return (
             self.reactants.sort() == value.reactants.sort()
@@ -485,17 +494,6 @@ class Equation:
             )
         )
 
-    def is_balanced(self) -> bool:
-        """Check if the equation is balanced."""
-        reactant_counts = sum(
-            (scale_counter(cf.composition, cf.count) for cf in self.reactants),
-            Counter(),
-        )
-        product_counts = sum(
-            (scale_counter(cf.composition, cf.count) for cf in self.products), Counter()
-        )
-        return reactant_counts == product_counts
-
 
 class EquationBuilder:
     """Calculates the element counts for each side of a chemical equation based on its AST.
@@ -504,10 +502,10 @@ class EquationBuilder:
     def __init__(self, ast: dict[str, Any]):
         self.ast = ast
 
-    def build(self) -> Equation:
+    def build(self) -> BaseEquation:
         reactants = self._build_side(self.ast["reactants"])
         products = self._build_side(self.ast["products"])
-        return Equation(reactants=reactants, products=products)
+        return BaseEquation(reactants=reactants, products=products)
 
     def _build_side(self, side: list[dict[str, Any]]) -> list[CountedFormula]:
         counted_formulas = []
@@ -526,14 +524,11 @@ class EquationBuilder:
         return counted_formulas
 
 
-def get_equation(equation: str) -> Equation:
-    ast = get_equation_ast(equation)
-    return EquationBuilder(ast).build()
-
-
 if __name__ == "__main__":
     from pprint import pprint
 
-    eq_str = "Cl2 + 2NaOH == ..."
-    eq = get_equation(eq_str)
-    pprint(eq.is_balanced())
+    equation_str = "2H2 + O2 -> 2H2O"
+    ast = get_equation_ast(equation_str)
+    builder = EquationBuilder(ast)
+    equation = builder.build()
+    pprint(equation)
