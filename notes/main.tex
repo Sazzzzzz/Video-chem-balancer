@@ -1,0 +1,290 @@
+\documentclass{ctexart}
+\include{./header_art.tex}
+\usepackage[version=4]{mhchem}
+\usepackage[a4paper,scale=0.8]{geometry}
+\usepackage{systeme}
+
+\newcommand{\grayplus}{\,\color{lightgray}+\,}
+\newcommand{\grayto}{\,\color{lightgray}\to\,}
+\DeclareMathOperator{\nullspace}{null}
+\DeclareMathOperator{\range}{range}
+\DeclareMathOperator{\Span}{span}
+\DeclareMathOperator{\Hom}{Hom}
+
+\renewcommand{\L}{\mathscr{L}}
+
+\title{化学方程式配平的数学原理}
+\begin{document}
+\author{\Large \Caffein}
+\date{}
+\maketitle
+\tableofcontents
+
+\section{线性方程组}
+\subsection{蒙昧未开}
+我想最开始学习的时候，每个人都把化学方程式配平当成一个数学游戏。
+
+最简单的，我们考虑化学方程式\(\ce{H2S + SO2 \to S + H2O}\) 。
+设系数\[
+    x \ce{H2S} + y \ce{SO2} \to z \ce{S} + t \ce{H2O}
+\]
+求解：
+\[
+    \begin{array}{lcr@{\quad}rcl@{\quad}l}
+        \ce{S}:  x+y &=& z & z &=& \frac{3t}{2} & \\
+        \ce{O}: 2x &=& t & \implies  \quad x &=& \frac{t}{2} &
+        \implies \quad \text{取 } t=2: \\
+        \ce{H}: 2y &=& 2t & y &=& t &
+    \end{array}
+    \begin{cases}
+        x = 1 \\
+        y = 2 \\
+        z = 3
+    \end{cases}
+\]
+
+理论上，任何化学方程式都可以通过列线性方程组来配平。但能否能配的出来就在于你的算力了\UseVerb{laugh}。
+
+\subsubsection{为什么见到的方程式都能恰好配平？}
+其实不能\UseVerb{smile}
+
+如果我们随便列一个化学方程式，很大概率是配不出来的。如\(\ce{SiO2 \to Au}\)。即便元素相等，也未必配的出来。如
+\(\ce{H2O + CO2 \to C2H5OH}\) 。
+
+另外，配的出来的方程式也不一定唯一。考虑高中常见的化学方程式：\[
+    \ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 + 8 H2O}
+\]
+
+不难发现\[
+    \ce{2 MnO4^- + 7 H2O2 + 6 H^+ -> 2 Mn^2+ + 6 O2 + 10 H2O}
+\]
+也是一个解。
+
+实际上，以下两个方程式的线性组合，都是合理的化学方程式：
+\begin{align*}
+    &\ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 + 8 H2O} \\
+    &\ce{2 H2O2 -> 2 O2 + 2 H2O}
+\end{align*}
+
+\subsection{配平化学方程式的数学原理}
+
+首先我们对配平这件事限定一个范围：\hl{我们最多能接受有理数的化学系数}，我们接受：
+
+\begin{itemize}
+    \item \checkmark 负的化学系数
+    \item \checkmark 分数化学系数
+\end{itemize}
+至于建立在一般\(\R\)
+甚至\(\C\) 上的化学方程式，
+
+\begin{align*}
+    \ce{2\sqrt{2} H2O2 &->[MnO2] \sqrt{2}O2 ^ + 2\sqrt{2} H2O}\\
+    \ce{2\sqrt{6} KMnO4 + (5\sqrt{6} + 2\i)H2O2 + 3\sqrt{6}H2SO4 &\to
+        \sqrt{6}K2SO4 + 2\sqrt{6}MnSO4 \\
+    & \qquad {} + (5\sqrt{6} + \i)O2 ^ + (8\sqrt{6} + 2\i)H2O}
+\end{align*}\footnote{读者可以验证，他们确实是平的\UseVerb{naughty}}
+我们在这里不做讨论。
+
+其次，作为数学对象，我们有充分的理由大胆的对化学方程式进行移项：
+\[
+    x \ce{H2S} + y \ce{SO2} - z \ce{S} - t \ce{H2O} = \vec{0}
+\]
+这里的\(\vec{0}\)表示“零化学式”，即不含任何元素的化学式。是不是非常大胆？
+
+最后，我们列出每个元素的守恒方程：
+\[
+    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+        & \multicolumn{1}{c@{\grayplus}}{\ce{H2S}} &
+        \multicolumn{1}{c@{\grayto}}{\ce{SO2}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{S}} &
+        \multicolumn{1}{c|}{\ce{H2O}} & \text{sum} \\
+        \hline
+        \ce{S} & x & y & -2z & 0 & 0 \\
+        \ce{H} & 2x & 0 & 0 & -2t & 0 \\
+        \ce{O} & 0 & 2y & 0 & -t & 0 \\
+    \end{array}
+\]
+或者我们忽略所有未知数，保留系数：
+\[
+    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+        & \multicolumn{1}{c@{\grayplus}}{\prescript{x}{}{\ce{H2S}}} &
+        \multicolumn{1}{c@{\grayto}}{\prescript{y}{}{\ce{SO2}}} &
+        \multicolumn{1}{c@{\grayplus}}{\prescript{-z}{}{\ce{S}}} &
+        \multicolumn{1}{c|}{\prescript{-t}{}{\ce{H2O}}} & \text{sum} \\
+        \hline
+        \ce{S} & 1 & 1 & 2 & 0 & 0 \\
+        \ce{H} & 2 & 0 & 0 & 2 & 0 \\
+        \ce{O} & 0 & 2 & 0 & 1 & 0 \\
+    \end{array}
+\]
+
+我们发现，这是齐次线性方程组的标准形式！我们可以把它写成矩阵形式：
+\[
+    \begin{pmatrix}
+        1 & 1 & 2 & 0 \\
+        2 & 0 & 0 & 2 \\
+        0 & 2 & 0 & 1
+    \end{pmatrix}
+    \begin{pmatrix}
+        x \\ y \\ -z \\ -t
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        0 \\ 0 \\ 0 \\ 0
+    \end{pmatrix}
+\]
+
+为表示方便，令\( z^\prime = -z \)，\( t^\prime = -t \)。整个方程用更简洁的语言可以写成：
+\[
+    A \vec{x} = \vec{0}
+\]
+
+其中的\(A\)是元素-化学式矩阵，我们叫它系数矩阵吧。 \(\vec{x}\)是化学系数向量。
+
+拆分开来，在列向量的角度看，化学式\(\ce{H2S}\)对应矩阵的第一列\(
+    \begin{pmatrix}1 & 2 & 0
+\end{pmatrix}^{\mathrm{T}}\)，表示它含有1个硫原子，2个氢原子，0个氧原子。依次类推，
+我们本质上是将每个化学物种看作是108维元素空间内的一个向量（零向量的存在器其实也隐喻了这一点），
+配平化学方程式就是在求解方程组：
+\[
+    x
+    \begin{pmatrix}1 \\ 2 \\ 0
+    \end{pmatrix} + y
+    \begin{pmatrix}1 \\ 0 \\ 2
+    \end{pmatrix} + z^\prime
+    \begin{pmatrix}2 \\ 0 \\ 0
+    \end{pmatrix} + t^\prime
+    \begin{pmatrix}0 \\ 2 \\ 1
+    \end{pmatrix} =
+    \begin{pmatrix}0 \\ 0 \\ 0
+    \end{pmatrix}
+\]
+
+\[
+    x \vec{\ce{H2S}} + y \vec{\ce{SO2}} + z^\prime \vec{\ce{S}} +
+    t^\prime \vec{\ce{H2O}} = \vec{0}
+\]
+
+系数矩阵是由这些元素向量为列向量组成的矩阵。在更高的维度上，求解方程式\(A\vec{x} = \vec{0}\)，
+实际上就是在求解矩阵\(A\)的\textbf{零空间}。
+\[
+    \text{All possible solutions} = \nullspace{A}
+\]
+
+\subsection{化学方程式的数学结构}
+
+实际不必大费周章，\textbf{只 需 注 意 到}化学方程式满足以下特性：
+\begin{itemize}
+    \item[\textbf{零元素：}] 谁说化学方程式不能全配零：\[
+            0 \ce{H2S} + 0 \ce{SO2} \to 0 \ce{S} + 0 \ce{H2O}
+        \]
+        你别说有没有意义\UseVerb{angry}，你就说平没平吧？
+    \item[\textbf{齐次性：}] 假设\[
+            x_0 \ce{H2S} + y_0 \ce{SO2} \to z_0 \ce{S} + t_0 \ce{H2O}
+        \]
+        是一个平衡的化学方程式，那么对于任意的\(\lambda \in \R\)，
+        \[
+            \lambda x_0 \ce{H2S} + \lambda y_0 \ce{SO2} \to
+            \lambda z_0 \ce{S} + \lambda t_0 \ce{H2O}
+        \]
+        也是一个平衡的化学方程式。
+    \item[\textbf{可加性：}] 随便的两个已配平的化学方程式：\[
+            x_1 \ce{H2S} + y_1 \ce{SO2} \to z_1 \ce{S} + t_1 \ce{H2O}
+        \]
+        和
+        \[
+            x_2 \ce{H2S} + y_2 \ce{SO2} \to z_2 \ce{S} + t_2 \ce{H2O}
+        \]
+        它们的和
+        \[
+            (x_1 + x_2) \ce{H2S} + (y_1 + y_2) \ce{SO2} \to
+            (z_1 + z_2) \ce{S} + (t_1 + t_2) \ce{H2O}
+        \]
+        也是一个平衡的化学方程式。
+\end{itemize}
+
+于是我们知道，所有可配平的化学方程式构成一个\textbf{线性空间}！\footnote{当然这不是一个严谨的证明，
+实际上只证明了这个特定的方程式的解集是某线性空间的子空间。严谨的证明是无聊且平凡的\UseVerb{grin}}
+（如果我们承认这个线性空间是有限维的），那么求解化学方程式的全部任务就变成了求解这个线性空间的一个基底的问题。
+
+\subsection{严谨化的消元法}
+我们求解一下前面的线性方程组：
+\[
+    \begin{tikzcd}[column sep=large, row sep=large]
+        \systeme[sort={x, y, z, t}]{
+            x + y + 2z^{\prime} = 0,
+            2y + 2t^{\prime} = 0,
+            2x + t^{\prime} = 0
+        }
+        \arrow[r] &
+        \systeme[sort={x, y, z, t}]{
+            x + y + 2z^{\prime} = 0,
+            2y + 2t^{\prime} = 0,
+            -2y - 4z^{\prime} +t^{\prime} = 0
+        }
+        \arrow[d] \\
+        \systeme[sort={x, y, z, t}]{
+            x + \frac{3}{2} t^{\prime} = 0,
+            y + t^{\prime} = 0,
+            z^{\prime} - \frac{3t^{\prime}}{4} = 0
+        } &
+        \systeme[sort={x, y, z, t}]{
+            x + y + 2z^{\prime} = 0,
+            2y + 2t^{\prime} = 0,
+            - 4z^{\prime} + 3t^{\prime} = 0
+        }
+        \arrow[l]
+    \end{tikzcd}
+\]
+
+你说我是随便消元的，我可不是随便消元的，都是有章法的。一般对于这样的齐次线性方程组，我们用以下的步骤用高中学过的加减消元法来解：
+
+% todo: 完成高斯-若当消元法的描述
+\begin{enumerate}
+    \item 选出一个方程，把它变形为某个变量的显式表达式
+    \item 把这个变量代入其他方程
+    \item 重复1-2，直到所有方程都变形完毕
+    \item 回代求解所有变量
+\end{enumerate}
+
+\hrule
+
+对于带电荷的化学方程式，我们只需在列出每个元素的守恒方程时，额外列出电荷守恒：
+\[
+    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+        & \multicolumn{1}{c@{\grayplus}}{\ce{MnO2}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{H+}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{Cl-}} &
+        \multicolumn{1}{c@{\grayto}}{\ce{Mn^2+}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
+        \multicolumn{1}{c|}{\ce{Cl2}} & \text{sum} \\
+        \hline
+        \ce{Mn} & 1 & 0 & 0 & -1 & 0 & 0 & 0\\
+        \ce{O} & 2 & 0 & 0 & 0 & -1 & 0 & 0\\
+        \ce{H} & 0 & 1 & 0 & 0 & -2 & 0 & 0\\
+        \ce{Cl} & 0 & 0 & 1 & 0 & 0 & -2 & 0\\
+        \ce{e^-} & 0 & -1 & 1 & -2 & 0 & 0 & 0\\
+    \end{array}
+\]
+% todo: is this correct?
+这种线性代数的方法不仅可以用于化学方程式，包括化学中的离子守恒（e.g. 在\(\ce{Na2CO3}\) 溶液中）：
+\[
+    c(\ce{OH^-}) + c(\ce{CO3^{2-}}) = c(\ce{H^+}) + c(\ce{H2CO3})
+\]
+乃至核物理方程式的配平：\[
+    \ce{U235 + n1 \to Ba141 + Kr92 + 3n1}
+\]
+
+\subsection{化学方程式的线性空间}
+% todo: fix theorem environment
+
+\begin{theorem}{线性映射基本定理}
+    假设\(V\) 是有限维的且 \(T \in \L(V,W)\)，那么\(\range
+    T\) 是有限维的，且\[
+        \dim V = \dim \nullspace T + \dim \range T
+    \]
+\end{theorem}
+
+当\(T\)是满射时，\(\dim \range T = \dim V\)，也就是物理老师常讲的\(n\)个方程决定\(n\)个未知数。
+
+\end{document}

@@ -40,7 +40,6 @@ class Equation(BaseEquation):
     def counted_substances(self):
         return list(chain(self.reactants, self.products))
 
-    @property
     def is_balanced(self) -> bool:
         """Check if the equation is balanced."""
         reactant_counts = sum(

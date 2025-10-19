@@ -1,6 +1,9 @@
 # Custom file
-test.*
+test*.*
 /data/
+
+# LaTeX temp files
+*_temp/
 
 # Byte-code files
 *.pyc
@@ -11,8 +14,6 @@ __pycache__/
 
 # Editor/IDE specific files
 .vscode/
-*.swp
-*.bak
 
 # Operating System generated files
 .DS_Store
@@ -29,5 +30,4 @@ instance/
 *.log
 
 # Added by cargo
-
 /target
