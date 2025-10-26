@@ -28,7 +28,7 @@ class Equation(BaseEquation):
         )
 
     @property
-    def substances(self):
+    def substances(self) -> list[Counter[str]]:
         return list(
             chain(
                 (cf.composition for cf in self.reactants),
@@ -37,7 +37,7 @@ class Equation(BaseEquation):
         )
 
     @property
-    def counted_substances(self):
+    def counted_substances(self) -> list[CountedFormula]:
         return list(chain(self.reactants, self.products))
 
     def is_balanced(self) -> bool:
@@ -50,10 +50,6 @@ class Equation(BaseEquation):
             (scale_counter(cf.composition, cf.count) for cf in self.products), Counter()
         )
         return reactant_counts == product_counts
-
-    def adjust_counts(self, counted_substance: CountedFormula, count: int):
-        """Adjusts the count of a counted substance."""
-        counted_substance.count = count
 
     def balance(self) -> list["Equation"]:
         """Balances the chemical equation using sympy with rref method."""
@@ -70,7 +66,7 @@ class Equation(BaseEquation):
             lcm = sp.lcm([term.q for term in solution])
             solution = [term * lcm for term in solution]
             for i, substance in enumerate(equation.counted_substances):
-                equation.adjust_counts(substance, abs(solution[i]))
+                substance.count = abs(solution[i])
             equations.append(equation)
         return equations
 

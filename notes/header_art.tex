@@ -10,10 +10,17 @@
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
+% For augmented matrices, from https://tex.stackexchange.com/questions/2233/whats-the-best-way-make-an-augmented-coefficient-matrix
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
 \usepackage{booktabs}  % 提供更专业的表格线条
 % Provide support for minipage used in definition environment
 \usepackage{varwidth}
-\usepackage[backend=biber,style=authortitle]{biblatex}
+\usepackage[backend=biber,style=numeric]{biblatex}
 \usepackage{array}     % 增强的表格功能
 % Underline and strikethrough
 \usepackage[normalem]{ulem}
@@ -62,6 +69,7 @@
 \SaveVerb{surprised}|:-o|
 \SaveVerb{grin}|:-]|
 \SaveVerb{naughty}|:P|
+\SaveVerb{relaxed}|:-|%
 % \setCJKmainfont[BoldFont=SimHei,ItalicFont=FangSong,BoldItalicFont=LiSu]{SimSun}
 % For cancel line
 \usepackage{cancel}
@@ -160,7 +168,7 @@
 %================================
 % THEOREM BOX
 %================================
-\newtcbtheorem[number within=section]{Theorem}{Theorem}
+\newtcbtheorem{Theorem}{Theorem}
 {%
     enhanced,
     breakable,
@@ -188,31 +196,24 @@
 %================================
 % DEFINITION BOX
 %================================
-\makeatletter
-\newtcbtheorem[number within=section]{Definition}{Definition}{enhanced,
+\newtcbtheorem{Definition}{Definition}
+{%
+    enhanced,
     breakable,
-    colback=mydefinitioncolor!8,
-    colframe=mydefinitioncolor,
-    attach boxed title to top left={yshift*=-\tcboxedtitleheight},
-    fonttitle=\bfseries,
-    title={#2},
-    boxed title size=title,
-    boxed title style={%
-        sharp corners,
-        rounded corners=northwest,
-        colback=tcbcolframe,
-        boxrule=0pt,
-    },
-    underlay boxed title={%
-        \path[fill=tcbcolframe] (title.south west)--(title.south east)
-        to[out=0, in=180] ([xshift=5mm]title.east)--
-        (title.center-|frame.east)
-        [rounded corners=\kvtcb@arc] |-
-        (frame.north) -| cycle;
-    },
-    #1
-}{definition}
-\makeatother
+    colback = mydefinitioncolor!10,
+    frame hidden,
+    boxrule = 0sp,
+    borderline west = {2pt}{0pt}{mydefinitioncolor},
+    sharp corners,
+    detach title,
+    before upper = \tcbtitle\par\smallskip,
+    coltitle = mydefinitioncolor!85!black,
+    fonttitle = \bfseries\sffamily,
+    description font = \mdseries,
+    separator sign none,
+    segmentation style={solid, mydefinitioncolor!85!black},
+}
+{definition}
 
 \newenvironment{definition}[2][]{%
     \begin{Definition}{#2}{#1}%
@@ -223,7 +224,7 @@
 %================================
 % PROBLEM BOX
 %================================
-\newtcbtheorem[number within=section]{Problem}{Problem}
+\newtcbtheorem{Problem}{Problem}
 {%
     enhanced,
     breakable,
@@ -250,7 +251,7 @@
 %================================
 % CLAIM BOX
 %================================
-\newtcbtheorem[number within=section]{Claim}{Claim}
+\newtcbtheorem{Claim}{Claim}
 {%
     enhanced
     ,breakable
@@ -279,7 +280,7 @@
 % NOTE BOX
 %================================
 
-\newtcbtheorem[number within=section]{Note}{Note}
+\newtcbtheorem{Note}{Note}
 {%
     enhanced
     ,breakable

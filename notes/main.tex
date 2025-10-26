@@ -3,6 +3,8 @@
 \usepackage[version=4]{mhchem}
 \usepackage[a4paper,scale=0.8]{geometry}
 \usepackage{systeme}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \newcommand{\grayplus}{\,\color{lightgray}+\,}
 \newcommand{\grayto}{\,\color{lightgray}\to\,}
@@ -12,6 +14,8 @@
 \DeclareMathOperator{\Hom}{Hom}
 
 \renewcommand{\L}{\mathscr{L}}
+
+\addbibresource{references.bib}
 
 \title{化学方程式配平的数学原理}
 \begin{document}
@@ -24,7 +28,7 @@
 \subsection{蒙昧未开}
 我想最开始学习的时候，每个人都把化学方程式配平当成一个数学游戏。
 
-最简单的，我们考虑化学方程式\(\ce{H2S + SO2 \to S + H2O}\) 。
+最简单的，我们考虑化学方程式\(\ce{H2S + SO2 \to S v + H2O}\) 。
 设系数\[
     x \ce{H2S} + y \ce{SO2} \to z \ce{S} + t \ce{H2O}
 \]
@@ -43,27 +47,32 @@
     \end{cases}
 \]
 
+于是\[
+    \ce{H2S + 2 SO2 -> 3 S v + 2 H2O}
+\]
+
 理论上，任何化学方程式都可以通过列线性方程组来配平。但能否能配的出来就在于你的算力了\UseVerb{laugh}。
 
 \subsubsection{为什么见到的方程式都能恰好配平？}
 其实不能\UseVerb{smile}
 
-如果我们随便列一个化学方程式，很大概率是配不出来的。如\(\ce{SiO2 \to Au}\)。即便元素相等，也未必配的出来。如
+如果我们随便列一个化学方程式，很大概率是配不出来的。如\(\ce{SiO2 \to Au}\)\sout{（点石成金 \UseVerb{naughty}）}。
+即便元素相等，也未必配的出来。如
 \(\ce{H2O + CO2 \to C2H5OH}\) 。
 
-另外，配的出来的方程式也不一定唯一。考虑高中常见的化学方程式：\[
-    \ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 + 8 H2O}
+另外，能配出来的方程式也不一定唯一。考虑高中常见的化学方程式：\[
+    \ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 ^ + 8 H2O}
 \]
 
 不难发现\[
-    \ce{2 MnO4^- + 7 H2O2 + 6 H^+ -> 2 Mn^2+ + 6 O2 + 10 H2O}
+    \ce{2 MnO4^- + 7 H2O2 + 6 H^+ -> 2 Mn^2+ + 6 O2 ^ + 10 H2O}
 \]
 也是一个解。
 
 实际上，以下两个方程式的线性组合，都是合理的化学方程式：
 \begin{align*}
-    &\ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 + 8 H2O} \\
-    &\ce{2 H2O2 -> 2 O2 + 2 H2O}
+    &\ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 ^ + 8 H2O} \\
+    &\ce{2 H2O2 -> 2 O2 ^ + 2 H2O}
 \end{align*}
 
 \subsection{配平化学方程式的数学原理}
@@ -85,53 +94,56 @@
 \end{align*}\footnote{读者可以验证，他们确实是平的\UseVerb{naughty}}
 我们在这里不做讨论。
 
+配平化学方程式的基本原理，在于我们初识化学时就学过的：
+\textbf{元素守恒定律}~\cite{HuaXueJiuNianJiShangCe}。即在化学反应中，各元素的总原子数保持不变。
+
 其次，作为数学对象，我们有充分的理由大胆的对化学方程式进行移项：
 \[
     x \ce{H2S} + y \ce{SO2} - z \ce{S} - t \ce{H2O} = \vec{0}
 \]
-这里的\(\vec{0}\)表示“零化学式”，即不含任何元素的化学式。是不是非常大胆？
+这里的\(\vec{0}\)表示“零化学式”，即不含任何元素的化学式。是不是非常大胆 \UseVerb{wink}
 
-最后，我们列出每个元素的守恒方程：
+于是，求解方程式所有的信息，都蕴含在所有元素的守恒律中，隐藏在下面的方程组里：
 \[
-    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+    \begin{array}{c|*{3}{c@{\grayplus}}c|c}
         & \multicolumn{1}{c@{\grayplus}}{\ce{H2S}} &
         \multicolumn{1}{c@{\grayto}}{\ce{SO2}} &
         \multicolumn{1}{c@{\grayplus}}{\ce{S}} &
         \multicolumn{1}{c|}{\ce{H2O}} & \text{sum} \\
         \hline
-        \ce{S} & x & y & -2z & 0 & 0 \\
+        \ce{S} & x & y & -z & 0 & 0 \\
         \ce{H} & 2x & 0 & 0 & -2t & 0 \\
         \ce{O} & 0 & 2y & 0 & -t & 0 \\
     \end{array}
 \]
 或者我们忽略所有未知数，保留系数：
 \[
-    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+    \begin{array}{c|*{3}{c@{\grayplus}}c|c}
         & \multicolumn{1}{c@{\grayplus}}{\prescript{x}{}{\ce{H2S}}} &
         \multicolumn{1}{c@{\grayto}}{\prescript{y}{}{\ce{SO2}}} &
         \multicolumn{1}{c@{\grayplus}}{\prescript{-z}{}{\ce{S}}} &
         \multicolumn{1}{c|}{\prescript{-t}{}{\ce{H2O}}} & \text{sum} \\
         \hline
-        \ce{S} & 1 & 1 & 2 & 0 & 0 \\
+        \ce{S} & 1 & 1 & 1 & 0 & 0 \\
         \ce{H} & 2 & 0 & 0 & 2 & 0 \\
         \ce{O} & 0 & 2 & 0 & 1 & 0 \\
     \end{array}
 \]
-
-我们发现，这是齐次线性方程组的标准形式！我们可以把它写成矩阵形式：
+就这个意义上来说，求解化学方程式，完全等价于求解一个线性的方程组。
+对于那些有线性代数基础的同学不难发现，这是齐次线性方程组的标准形式！我们可以把它写成矩阵形式：
 \[
-    \begin{pmatrix}
-        1 & 1 & 2 & 0 \\
+    \begin{bmatrix}
+        1 & 1 & 1 & 0 \\
         2 & 0 & 0 & 2 \\
         0 & 2 & 0 & 1
-    \end{pmatrix}
-    \begin{pmatrix}
+    \end{bmatrix}
+    \begin{bmatrix}
         x \\ y \\ -z \\ -t
-    \end{pmatrix}
+    \end{bmatrix}
     =
-    \begin{pmatrix}
+    \begin{bmatrix}
         0 \\ 0 \\ 0 \\ 0
-    \end{pmatrix}
+    \end{bmatrix}
 \]
 
 为表示方便，令\( z^\prime = -z \)，\( t^\prime = -t \)。整个方程用更简洁的语言可以写成：
@@ -142,22 +154,22 @@
 其中的\(A\)是元素-化学式矩阵，我们叫它系数矩阵吧。 \(\vec{x}\)是化学系数向量。
 
 拆分开来，在列向量的角度看，化学式\(\ce{H2S}\)对应矩阵的第一列\(
-    \begin{pmatrix}1 & 2 & 0
-\end{pmatrix}^{\mathrm{T}}\)，表示它含有1个硫原子，2个氢原子，0个氧原子。依次类推，
-我们本质上是将每个化学物种看作是108维元素空间内的一个向量（零向量的存在器其实也隐喻了这一点），
+    \begin{bmatrix}1 & 2 & 0
+\end{bmatrix}^{\mathrm{T}}\)，表示它含有1个硫原子，2个氢原子，0个氧原子。依次类推，
+我们本质上是将每个化学物种看作是108维元素空间内的一个向量（\textit{零向量的存在其实也隐喻了这一点}），
 配平化学方程式就是在求解方程组：
 \[
     x
-    \begin{pmatrix}1 \\ 2 \\ 0
-    \end{pmatrix} + y
-    \begin{pmatrix}1 \\ 0 \\ 2
-    \end{pmatrix} + z^\prime
-    \begin{pmatrix}2 \\ 0 \\ 0
-    \end{pmatrix} + t^\prime
-    \begin{pmatrix}0 \\ 2 \\ 1
-    \end{pmatrix} =
-    \begin{pmatrix}0 \\ 0 \\ 0
-    \end{pmatrix}
+    \begin{bmatrix}1 \\ 2 \\ 0
+    \end{bmatrix} + y
+    \begin{bmatrix}1 \\ 0 \\ 2
+    \end{bmatrix} + z^\prime
+    \begin{bmatrix}1 \\ 0 \\ 0
+    \end{bmatrix} + t^\prime
+    \begin{bmatrix}0 \\ 2 \\ 1
+    \end{bmatrix} =
+    \begin{bmatrix}0 \\ 0 \\ 0
+    \end{bmatrix}
 \]
 
 \[
@@ -165,7 +177,7 @@
     t^\prime \vec{\ce{H2O}} = \vec{0}
 \]
 
-系数矩阵是由这些元素向量为列向量组成的矩阵。在更高的维度上，求解方程式\(A\vec{x} = \vec{0}\)，
+系数矩阵就是由这些元素向量为列向量组成的矩阵。更抽象的说，求解方程式\(A\vec{x} = \vec{0}\)，
 实际上就是在求解矩阵\(A\)的\textbf{零空间}。
 \[
     \text{All possible solutions} = \nullspace{A}
@@ -173,7 +185,7 @@
 
 \subsection{化学方程式的数学结构}
 
-实际不必大费周章，\textbf{只 需 注 意 到}化学方程式满足以下特性：
+实际不必大费周章，\textbf{只需注意到}化学方程式在代数上满足以下特性：
 \begin{itemize}
     \item[\textbf{零元素：}] 谁说化学方程式不能全配零：\[
             0 \ce{H2S} + 0 \ce{SO2} \to 0 \ce{S} + 0 \ce{H2O}
@@ -204,58 +216,213 @@
 \end{itemize}
 
 于是我们知道，所有可配平的化学方程式构成一个\textbf{线性空间}！\footnote{当然这不是一个严谨的证明，
-实际上只证明了这个特定的方程式的解集是某线性空间的子空间。严谨的证明是无聊且平凡的\UseVerb{grin}}
-（如果我们承认这个线性空间是有限维的），那么求解化学方程式的全部任务就变成了求解这个线性空间的一个基底的问题。
+实际上只证明了这个特定的方程式的解集是某线性空间的子空间。严谨的证明是无聊且平凡的\UseVerb{grin}}。结合我们先前的推论，
+不难发现这实际上就是系数矩阵\(A\) 的零空间\(\nullspace A\) 那么求解化学方程式的全部任务就完全变成了求解这个线性空间的一个基底的问题。
 
-\subsection{严谨化的消元法}
+\subsection{机械化的消元法}
 我们求解一下前面的线性方程组：
 \[
     \begin{tikzcd}[column sep=large, row sep=large]
         \systeme[sort={x, y, z, t}]{
-            x + y + 2z^{\prime} = 0,
-            2y + 2t^{\prime} = 0,
-            2x + t^{\prime} = 0
+            x + y + z^{\prime} = 0,
+            2x + 2t^{\prime} = 0,
+            2y + t^{\prime} = 0
         }
         \arrow[r] &
         \systeme[sort={x, y, z, t}]{
-            x + y + 2z^{\prime} = 0,
-            2y + 2t^{\prime} = 0,
-            -2y - 4z^{\prime} +t^{\prime} = 0
+            x + y + z^{\prime} = 0,
+            -2y - 2z^{\prime} + 2t^{\prime} = 0,
+            2y +t^{\prime} = 0
         }
         \arrow[d] \\
         \systeme[sort={x, y, z, t}]{
-            x + \frac{3}{2} t^{\prime} = 0,
-            y + t^{\prime} = 0,
-            z^{\prime} - \frac{3t^{\prime}}{4} = 0
+            x + t^{\prime} = 0,
+            y + \frac{1}{2}t^{\prime} = 0,
+            z^{\prime} - \frac{3t^{\prime}}{2} = 0
         } &
         \systeme[sort={x, y, z, t}]{
-            x + y + 2z^{\prime} = 0,
-            2y + 2t^{\prime} = 0,
-            - 4z^{\prime} + 3t^{\prime} = 0
+            x + y + z^{\prime} = 0,
+            -2y -2z^{\prime} + 2t^{\prime} = 0,
+            -2z^{\prime} + 3t^{\prime} = 0
         }
         \arrow[l]
     \end{tikzcd}
 \]
 
-你说我是随便消元的，我可不是随便消元的，都是有章法的。一般对于这样的齐次线性方程组，我们用以下的步骤用高中学过的加减消元法来解：
+你说我是随便消元的，我可不是随便消元的，都是有章法的。
+中学我们就学过加减消元法和代入消元法，对于这样一般的线性方程组，策略其实只有一种：一个式子消一个变量。
 
-% todo: 完成高斯-若当消元法的描述
-\begin{enumerate}
-    \item 选出一个方程，把它变形为某个变量的显式表达式
-    \item 把这个变量代入其他方程
-    \item 重复1-2，直到所有方程都变形完毕
-    \item 回代求解所有变量
-\end{enumerate}
+拿着式1把\(x\)全部消掉，也就是通过加减式1的若干倍，把其他式子中的\(x\)系数变为\(0\)。
+\[
+    \begin{tikzcd}[column sep=large, row sep=large]
+        \systeme[sort={x, y, z, t}]{
+            x + y + z^{\prime} = 0,
+            2x + 2t^{\prime} = 0,
+            2y + t^{\prime} = 0
+        }
+        \arrow[r, "R_{2} - 2R_{1}"] &
+        \systeme[sort={x, y, z, t}]{
+            x + y + z^{\prime} = 0,
+            -2y - 2z^{\prime} + 2t^{\prime} = 0,
+            2y +t^{\prime} = 0
+        }
+    \end{tikzcd}
+\]
+式1就不要动了，一个式子有一个式子的任务。接下来我们用式2干掉除式1外的所有式子中的\(y\)：
+\[
+    \begin{tikzcd}[column sep=large, row sep=large]
+        \systeme[sort={x, y, z, t}]{
+            x + y + z^{\prime} = 0,
+            -2y - 2z^{\prime} + 2t^{\prime} = 0,
+            2y +t^{\prime} = 0
+        }
+        \arrow[r, "R_{3} + R_{2}"] &
+        \systeme[sort={x, y, z, t}]{
+            x + y + z^{\prime} = 0,
+            -2y -2z^{\prime} + 2t^{\prime} = 0,
+            -2z^{\prime} + 3t^{\prime} = 0
+        }
+    \end{tikzcd}
+\]
 
-\hrule
+不难发现，这时方程的最后变成了\(- 2z^{\prime} + 3t^{\prime} = 0\) ，只含有\(z^{\prime}\)
+和 \(t^{\prime}\) 两个变量，似乎这个方程并没有唯一的解。不过想来也合理，若是只有一个变量，岂不是方程所有的元都为零了？
+
+这里\(t^{\prime} \) 实际上没有任何限制，每一个 \(t^{\prime} \) 都对应一个解。
+被称作\textbf{自由变量}，在非平凡的意义下可以取除零外的任意值。
+
+随便取\(t^{\prime} = -2\)，用\(t^{\prime} \) 解出\(z^{\prime} \)，
+再用\(z^{\prime} \) 解出\(y\)，再用\(y\) 解出\(x\)（\textbf{反代法}）：
+\[
+    \systeme[sort={x, y, z, t}]{
+        -2z^{\prime} + 3t^{\prime} = 0 @\implies z^{\prime} = -3,
+        -2y -2z^{\prime} + 2t^{\prime} = 0 @\implies y = 1,
+        x + y + z^{\prime} = 0 @\implies x = 2,
+    }
+\]
+对这套算法而言，反应物和生成物在方程式里没有区别：正数解代表反应物，负数解代表生成物。只需把负数解移到方程式的另一边即可。我们得到最终的配平结果：
+\[
+    \ce{2 H2S + 1 SO2 -> 3 S v + 2 H2O}
+\]
+
+当然如果你不喜欢反代，也可以继续从方程的底端往上消元，直到每行只含有一个变量为止：
+\[
+    \begin{tikzcd}[column sep=large, row sep=large]
+        \systeme[sort={x, y, z, t}]{
+            x + y + z^{\prime} = 0,
+            -2y -2z^{\prime} + 2t^{\prime} = 0,
+            -2z^{\prime} + 3t^{\prime} = 0
+        }
+        \arrow[r, "R_{2} - R_{3}", "R_{1} + \frac{1}{2}R_{3}"'] &
+        \systeme[sort={x, y, z, t}]{
+            x + y + \frac{3}{2}t^{\prime} = 0,
+            -2y - t^{\prime} = 0,
+            -2z^{\prime} + 3t^{\prime} = 0
+        }
+        \arrow[r, "R_{1} + \frac{1}{2}R_{2}"] &
+        \systeme[sort={x, y, z, t}]{
+            x + t^{\prime} = 0,
+            -2y - t^{\prime} = 0,
+            -2z^{\prime} + 3t^{\prime} = 0
+        }
+    \end{tikzcd}
+\]
+
+于是，形如式a的，呈阶梯状的矩阵，我们称之为\textbf{行阶梯形矩阵}（Row Echelon Form，REF），而形如式b的，
+每行的首个非零元都是1，且每行的首个非零元都在其上一行的首个非零元的右侧，我们称之为\textbf{行最简形矩阵}（Reduced Row
+Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数矩阵化为行阶梯形矩阵，甚至行最简形矩阵，然后回代求解所有变量。
+这种方法有一个高级的名字，叫做\textbf{高斯-若当消元法}（Gauss-Jordan Elimination）。
+
+在矩阵的语言下，以上的步骤可以写作：
+\[
+    \begin{bmatrix}[cccc|c]
+        1 & 1 & 1 & 0 & 0\\
+        2 & 0 & 0 & 2 & 0\\
+        0 & 2 & 0 & 1 & 0
+    \end{bmatrix}
+    \xrightarrow{R_{2} - 2R_{1}}
+    \begin{bmatrix}[cccc|c]
+        1 & 1 & 1 & 0 & 0\\
+        0 & -2 & -2 & 2 & 0\\
+        0 & 2 & 0 & 1 & 0
+    \end{bmatrix}
+    \xrightarrow{R_{3} + R_{2}}
+    \underbrace{
+        \begin{bmatrix}[cccc|c]
+            1 & 1 & 1 & 0 & 0\\
+            0 & -2 & -2 & 2 & 0\\
+            0 & 0 & -2 & 3 & 0
+    \end{bmatrix}}_{\text{行阶梯形矩阵}}
+\]
+\[
+    \begin{bmatrix}[cccc|c]
+        1 & 1 & 1 & 0 & 0\\
+        0 & -2 & -2 & 2 & 0\\
+        0 & 0 & -2 & 3 & 0
+    \end{bmatrix}
+    \xrightarrow[R_{2} - R_{3}]{R_{1} + \frac{1}{2}R_{3}}
+    \begin{bmatrix}[cccc|c]
+        1 & 1 & \frac{3}{2} & 0 & 0\\
+        0 & -2 & 1 & 2 & 0\\
+        0 & 0 & -2 & 3 & 0
+    \end{bmatrix}
+    \xrightarrow{R_{1} + \frac{1}{2}R_{2}}
+    \underbrace{
+        \begin{bmatrix}[cccc|c]
+            1 & 0 & 0 & 1 & 0\\
+            0 & 1 & 0 & \frac{1}{2} & 0\\
+            0 & 0 & 1 & -\frac{3}{2} & 0
+    \end{bmatrix}}_{\text{行最简形矩阵}}
+\]
+
+当然，正式的高斯-若当消元法不只是一个式子消一个变量这么简单。解方程中所有允许的操作有：
+\begin{definition}{初等行变换}
+    对于一个线性方程组（以及其对应的增广矩阵），我们允许以下三种操作：
+    \begin{itemize}
+        \item 交换两行
+        \item 将某一行乘以非零常数
+        \item 将某一行加上另一行的若干倍
+    \end{itemize}
+\end{definition}
+
+这些操作都不会改变线性方程组的解集。
+
+完整版的消元法步骤为\footnote{高斯-若当消元法的具体细节可以在网上找到更多资料，这里只是给出一个简略的伪代码以供参考。
+写出来我自己都不会看\UseVerb{grin}}：
+
+\begin{algorithm}[H]
+    \caption{高斯-若尔当消元法}
+    \label{alg:gauss-jordan}
+    \begin{algorithmic}[1]
+        \State 设 \(A\) 是一个 \(m \times (n+1)\) 的增广矩阵。
+        \State \( \text{主元行} \leftarrow 0 \)
+        \For{\(j \leftarrow 0\) to \(n-1\)}  \Comment{遍历列}
+        \State 找到 \(i \ge \text{主元行}\) 使得 \(A[i, j] \ne 0\)。
+        \If{存在这样的 \(i\)}
+        \State 交换第 \(i\) 行和第 \(\text{主元行}\)。
+        \Comment{\(R_i \leftrightarrow R_{\text{主元行}}\)}
+        \State 将第 \(\text{主元行}\) 除以
+        \(A[\text{主元行}, j]\)。 \Comment{使主元元素为 1}
+        \For{\(k \leftarrow 0\) to \(m-1\)} \Comment{消除第 \(j\) 列中的其他项}
+        \If{\(k \ne \text{主元行}\)}
+        \State 从第 \(k\) 行减去 \(A[k, j]\) 乘以第 \(\text{主元行}\)。
+        \Comment{\(R_k \leftarrow R_k - A[k,j] \cdot
+        R_{\text{主元行}}\)}
+        \EndIf
+        \EndFor
+        \State \( \text{主元行} \leftarrow \text{主元行} + 1 \)
+        \EndIf
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
 
 对于带电荷的化学方程式，我们只需在列出每个元素的守恒方程时，额外列出电荷守恒：
 \[
-    \begin{array}{c|c@{\grayplus}c@{\grayplus}c@{\grayplus}c@{\grayplus}c@{\grayplus}c|c}
+    \begin{array}{c|*{5}{c@{\grayplus}}c|c}
         & \multicolumn{1}{c@{\grayplus}}{\ce{MnO2}} &
         \multicolumn{1}{c@{\grayplus}}{\ce{H+}} &
-        \multicolumn{1}{c@{\grayplus}}{\ce{Cl-}} &
-        \multicolumn{1}{c@{\grayto}}{\ce{Mn^2+}} &
+        \multicolumn{1}{c@{\grayto}}{\ce{Cl-}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{Mn^2+}} &
         \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
         \multicolumn{1}{c|}{\ce{Cl2}} & \text{sum} \\
         \hline
@@ -266,17 +433,36 @@
         \ce{e^-} & 0 & -1 & 1 & -2 & 0 & 0 & 0\\
     \end{array}
 \]
-% todo: is this correct?
-这种线性代数的方法不仅可以用于化学方程式，包括化学中的离子守恒（e.g. 在\(\ce{Na2CO3}\) 溶液中）：
+这种线性代数的方法不仅可以用于化学方程式，包括化学中的离子守恒（e.g. 在\(\ce{NaHCO3}\) 溶液中）：
 \[
     c(\ce{OH^-}) + c(\ce{CO3^{2-}}) = c(\ce{H^+}) + c(\ce{H2CO3})
 \]
 乃至核物理方程式的配平：\[
     \ce{U235 + n1 \to Ba141 + Kr92 + 3n1}
 \]
+都遵循同样的数学原理。
 
 \subsection{化学方程式的线性空间}
-% todo: fix theorem environment
+
+呼～终于摆脱了繁琐的计算\UseVerb{relaxed}
+
+\subsubsection{维度基础}
+
+维度，就是自由度。
+
+在上例中，我们注意到解方程过程中自由变量只有\(t^{\prime}\) 一个，就可以说解空间的维数就是\(1\)。配平解可以写成这么个形式：
+\begin{align*}
+    &\placeholder{=}\ce{H2S +  SO2 -  S v + H2O}\\
+    &= \lambda (\ce{H2S + 2 SO2 -> 3 S v + 2 H2O})
+\end{align*}
+
+对于那些有两个自由变量的化学方程式，解空间的维数就是\(2\)，如：
+\begin{align*}
+    &\placeholder{=}\ce{MnO4^- + H2O2 + H^+ - Mn^2+ + O2 + H2O} \\
+    &=\lambda(\ce{2 MnO4^- + 5 H2O2 + 6 H^+ -> 2 Mn^2+ + 5 O2 ^ + 8 H2O}) \\
+    &+\mu(\ce{2 H2O2 -> 2 O2 ^ + 2 H2O})
+\end{align*}
+\subsubsection{物种数 = 元素数 + 1?}
 
 \begin{theorem}{线性映射基本定理}
     假设\(V\) 是有限维的且 \(T \in \L(V,W)\)，那么\(\range
@@ -286,5 +472,81 @@
 \end{theorem}
 
 当\(T\)是满射时，\(\dim \range T = \dim V\)，也就是物理老师常讲的\(n\)个方程决定\(n\)个未知数。
+当\(T\)不是满射时，方程组解的维数+线性变换的值域维数=定义域维数。
+
+如果我们把系数矩阵看作是一个线性变换，那么该线性变换将化学系数空间（物种数空间）映射到元素种类空间。应用线性映射基本定理，我们可以得到：
+\[
+    \text{物种数} = \text{配平方法数} + \text{\hl{能产生的元素排列的维数}}
+\]
+\textbf{物种数}即反应物、生成物种类之和。
+\textbf{配平方法数}就是相互独立的配平方法数\footnote{这里相互独立指的是不能相互“推导”的化学方程式解法，
+即不能通过数乘和加法得到的配平方法，与向量的独立是一个意思}，也就是所有可行方程式配平系数的维数，
+对于绝大多数化学方程式来说就是\(1\)。而\textbf{能产生的元素排列的维数}，简单来说就是元素种类数
+\footnote{此处的元素种类数将电子看作一种元素}。举个例子：
+
+\begin{center}
+    \begin{tabular}{rcl}
+        & \quad & $\placeholder{=}$ 配平方法数：$1$ \\
+        \ce{Br2 + NH3 \to NH4Br + N2 ^}
+        & & $+$ 元素数：$3$ \\
+        & & $=$ 物种数：$4$ \\[1em]
+
+        & \quad & $\placeholder{=}$ 配平方法数：$2$ \\
+        \ce{2 MnO4^- + 7 H2O2 + 6 H^+ -> 2 Mn^2+ + 6 O2 ^ + 10 H2O}
+        & & $+$ 元素数：$4$ \\
+        & & $=$ 物种数：$6$
+    \end{tabular}
+\end{center}
+
+然而，不是所有的化学方程式都满足这么美好的性质\UseVerb{sad}。考虑最简单的置换反应：曾青得铁，则化为铜
+\[
+    \begin{array}{rcl}
+        & &\placeholder{+}\, \text{配平方法数：}1 \\
+        \ce{Fe + CuSO4 \to FeSO4 + Cu} & \quad &+\, \text{元素数：}4 \\
+        & &\neq \, \text{物种数：}4
+    \end{array}
+\]
+这就是\hl{能产生的元素排列的维数}吊诡的地方了。具体来说，这里虽然一共有\(4\)种元素（\(\ce{Fe}\) ,
+\(\ce{Cu}\) , \(\ce{S}\) , \(\ce{O}\)），但实际上\(\ce{S}\) 必与\(\ce{O}\)
+以\(1:4\)的比例共存于\(\ce{SO4^{2-}}\) 中，于是元素排列的维数实际上只有\(3\)。
+
+或许你会认为这种简单的问题可以通过把\(\ce{SO4^{2-}}\) 看作一个整体来解决，但实际上我们考虑：
+
+\begin{equation}
+    \label{eq:NH4Cr2O7 decomp}
+    \begin{array}{c|*{3}{c@{\grayplus}}c|c}
+        & \multicolumn{1}{c@{\grayplus}}{\ce{(NH4)2Cr2O7}} &
+        \multicolumn{1}{c@{\grayto}}{\ce{N2}} &
+        \multicolumn{1}{c@{\grayplus}}{\ce{Cr2O3}} &
+        \multicolumn{1}{c|}{\ce{H2O}} & \text{sum} \\
+        \hline
+        \ce{N} & 2 & 2 & 0 & 0 & 0\\
+        \ce{H} & 8 & 0 & 0 & 2 & 0\\
+        \ce{Cr} & 2 & 0 & 2 & 0 & 0\\
+        \ce{O} & 7 & 0 & 3 & 1 & 0\\
+    \end{array}
+    \quad
+    \begin{array}{cl}
+        & \placeholder{+}\, \text{配平方法数：}1 \\
+        \quad & +\, \text{元素数：}4 \\
+        & \neq \, \text{物种数：}4
+    \end{array}
+\end{equation}
+
+这下是不是看不出来了\UseVerb{smile}
+
+其实\textbf{只需注意到}~\cref{eq:NH4Cr2O7 decomp}中元素之间并不是线性无关的：
+\[
+    r(\ce{H}) + 3r(\ce{Cr}) - 2r(\ce{O}) = 0
+\]
+% todo: 为什么是行的线性相关？
+
+因此一般来说，化学方程式的物种数、配平方法数与元素排列维数不存在固定的关系。但对于大部分化学方程式来说，
+能产生的元素排列的维数就是元素种类数，而配平方法数通常是\(1\) ，因此：
+\[
+    \text{物种数} \approx 1 + \text{元素种类数}
+\]
+
+\printbibliography[heading=bibintoc,title={参考文献}]
 
 \end{document}
