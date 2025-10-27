@@ -424,7 +424,7 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
         \multicolumn{1}{c@{\grayto}}{\ce{Cl-}} &
         \multicolumn{1}{c@{\grayplus}}{\ce{Mn^2+}} &
         \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
-        \multicolumn{1}{c|}{\ce{Cl2}} & \text{sum} \\
+        \multicolumn{1}{c|}{\ce{Cl2 ^}} & \text{sum} \\
         \hline
         \ce{Mn} & 1 & 0 & 0 & -1 & 0 & 0 & 0\\
         \ce{O} & 2 & 0 & 0 & 0 & -1 & 0 & 0\\
@@ -465,6 +465,8 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
 \subsubsection{物种数 = 元素数 + 1?}
 
 \begin{theorem}{线性映射基本定理}
+    % todo: manage reference
+    \cite{LinearAlgebraDone2024}
     假设\(V\) 是有限维的且 \(T \in \L(V,W)\)，那么\(\range
     T\) 是有限维的，且\[
         \dim V = \dim \nullspace T + \dim \range T
@@ -510,8 +512,17 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
 \(\ce{Cu}\) , \(\ce{S}\) , \(\ce{O}\)），但实际上\(\ce{S}\) 必与\(\ce{O}\)
 以\(1:4\)的比例共存于\(\ce{SO4^{2-}}\) 中，于是元素排列的维数实际上只有\(3\)。
 
-或许你会认为这种简单的问题可以通过把\(\ce{SO4^{2-}}\) 看作一个整体来解决，但实际上我们考虑：
+或许你会认为这种简单的问题可以通过把\(\ce{SO4^{2-}}\) 看作一个整体来解决，不妨试试：
+\[
+    \begin{array}{rcl}
+        & &\placeholder{+}\, \text{配平方法数：}1 \\
+        \ce{NH4NO2 \to  N2 + 2H2O} & \quad &+\, \text{元素数：}3 \\
+        & &\neq \, \text{物种数：}3
+    \end{array}
+\]
+还能看出来吗？这里\(\ce{H}\) 始终是两倍的\(\ce{O}\) 。
 
+实际上我们考虑：
 \begin{equation}
     \label{eq:NH4Cr2O7 decomp}
     \begin{array}{c|*{3}{c@{\grayplus}}c|c}
@@ -532,7 +543,6 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
         & \neq \, \text{物种数：}4
     \end{array}
 \end{equation}
-
 这下是不是看不出来了\UseVerb{smile}
 
 其实\textbf{只需注意到}~\cref{eq:NH4Cr2O7 decomp}中元素之间并不是线性无关的：
@@ -547,6 +557,52 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
     \text{物种数} \approx 1 + \text{元素种类数}
 \]
 
-\printbibliography[heading=bibintoc,title={参考文献}]
+从某种浪漫的角度来说，化学方程式的物种数与元素数相差的\(1\)，就是这个式子本身\UseVerb{smile}
 
+\subsubsection{系数矩阵的空间们}
+
+\noindent
+\begin{minipage}[c]{0.5\textwidth}
+    \[
+        \begin{array}{c|*{5}{c}c}
+            & \ce{MnO2} & \ce{H+} &\ce{Cl-} &\ce{Mn^2+} &\ce{H2O} &\ce{Cl2} \\
+            \hline
+            \ce{Mn} & 1 & 0 & 0 & -1 & 0 & 0\\
+            \ce{O} & 2 & 0 & 0 & 0 & -1 & 0\\
+            \ce{H} & 0 & 1 & 0 & 0 & -2 & 0\\
+            \ce{Cl} & 0 & 0 & 1 & 0 & 0 & -2\\
+            \ce{e^-} & 0 & -1 & 1 & -2 & 0 & 0\\
+        \end{array}
+    \]
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.45\textwidth}
+    \textbf{列空间}：所有可能的元素排列空间。
+    每一个列向量代表某物种的元素分量向量，秩代表能产生的元素排列的维数。
+    \\[1em]
+    \textbf{零空间}：所有可能的化学方程式配平方法空间。
+    每一个零空间向量代表一种配平方法，维数代表能产生的独立配平方法的个数。
+\end{minipage}
+\vspace{1em}
+
+真正难以理解的是系数矩阵的行空间。
+
+当我们把系数矩阵\(A\) 看作一个线性映射时，\(A\)把物种系数向量映射到元素向量，矩阵的每一行，由各个物种在该元素上的系数构成，
+以点乘的方式作用在系数上，得到元素的净数目。因此，系数矩阵的行向量本质上是一个\textbf{线性泛函}。
+当我们只考虑元素数为零的化学方程式时，这些线性泛函的值都为零，也就是元素守恒。因此系数矩阵的行空间，
+可以看作是所有\textbf{元素守恒关系}的空间。每一个行向量代表一条元素守恒，而行空间的维数，代表了这些守恒关系中线性无关的个数（即上例中发现的组合关系）。
+
+在零空间上，行空间内的元素以泛函作用全得零，故可称行空间是零空间的\textbf{零化子}。
+% todo:先搞清楚这四个空间的关系再写
+
+\section{前人的智慧}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{resources/Jesse.pdf}
+\end{figure}
+配个方程式，哪有那么难？\UseVerb{angry}
+\subsection{Look in my eyes!}
+
+\printbibliography[heading=bibintoc,title={参考文献}]
 \end{document}

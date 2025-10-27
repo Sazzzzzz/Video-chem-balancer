@@ -4,6 +4,7 @@ test*.*
 
 # LaTeX temp files
 *_temp/
+*.pdf
 
 # Byte-code files
 *.pyc
