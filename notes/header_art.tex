@@ -20,21 +20,16 @@
 \usepackage{booktabs}  % 提供更专业的表格线条
 % Provide support for minipage used in definition environment
 \usepackage{varwidth}
-\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage[style=numeric-comp,autocite=superscript]{biblatex}
 \usepackage{array}     % 增强的表格功能
 % Underline and strikethrough
 \usepackage[normalem]{ulem}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[most,many,breakable]{tcolorbox}
 \usepackage{extarrows}
+% better \d symbol
 \usepackage{derivative}
 \usepackage{tikz-cd}
-% Make sure all math formulas are displayed in displaystyle
-\usepackage{breqn}
-% Some may argue that the use of displaystyle in inline formulas may
-% break line spacing and make the document look ugly. However, I
-% prefer to follow the choice of the textbook setting
-\everymath{\displaystyle}
 % For \mathscr
 \usepackage{mathrsfs}
 \usepackage{graphicx}
@@ -42,6 +37,16 @@
 \usepackage{titletoc,titlesec}
 \usepackage{float}
 \usepackage{tikz}
+
+%! breqn are known to have compatibility issues with tikz
+%! This may cause hard-to-find bugs
+% Make sure all math formulas are displayed in displaystyle
+% \usepackage{breqn}
+% Some may argue that the use of displaystyle in inline formulas may
+% break line spacing and make the document look ugly. However, I
+% prefer to follow the choice of the textbook setting
+\everymath{\displaystyle}
+
 % For bold math symbols
 \usepackage{bm}
 \usepackage{mathtools} % For \coloneqq

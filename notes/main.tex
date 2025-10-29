@@ -6,14 +6,58 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 
+\usetikzlibrary{tikzmark,calc}
+
 \newcommand{\grayplus}{\,\color{lightgray}+\,}
 \newcommand{\grayto}{\,\color{lightgray}\to\,}
+
 \DeclareMathOperator{\nullspace}{null}
 \DeclareMathOperator{\range}{range}
 \DeclareMathOperator{\Span}{span}
 \DeclareMathOperator{\Hom}{Hom}
 
 \renewcommand{\L}{\mathscr{L}}
+
+% Arrow commands: #1=start node, #2=end node, #3=label
+\newcommand{\arrowLR}[3]{%
+    \draw[->|,red,thick]
+    ([xshift=2pt]#1.south east)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#2.south west)
+    node[midway,below,blue,font=\small] {#3};
+}
+
+\newcommand{\arrowRL}[3]{%
+    \draw[->|,red,thick]
+    ([xshift=-2pt]#1.south west)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#2.south east)
+    node[midway,below,blue,font=\small] {#3};
+}
+\newcommand{\arrowsToOneRL}[4]{%
+    % #1 = first start node, #2 = second start node, #3 = end node, #4 = label
+    \draw[->,red,thick]
+    ([xshift=-2pt]#1.south west)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#3.south east)
+    node[midway,below,blue,font=\small] {#4};
+    \draw[->,red,thick]
+    (#2.south)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#3.south east);
+}
+\newcommand{\arrowsToOneLR}[4]{%
+    % #1 = first start node, #2 = second start node, #3 = end node, #4 = label
+    \draw[->,red,thick]
+    ([xshift=2pt]#1.south east)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#3.south west)
+    node[midway,below,blue,font=\small] {#4};
+    \draw[->,red,thick]
+    (#2.south)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#3.south west);
+}
 
 \addbibresource{references.bib}
 
@@ -24,7 +68,7 @@
 \maketitle
 \tableofcontents
 
-\section{线性方程组}
+\section[线性方程组]{线性方程组\supercite{ChemicalEquationBalancing1982}}
 \subsection{蒙昧未开}
 我想最开始学习的时候，每个人都把化学方程式配平当成一个数学游戏。
 
@@ -300,7 +344,9 @@
         x + y + z^{\prime} = 0 @\implies x = 2,
     }
 \]
-对这套算法而言，反应物和生成物在方程式里没有区别：正数解代表反应物，负数解代表生成物。只需把负数解移到方程式的另一边即可。我们得到最终的配平结果：
+对这套算法而言，反应物和生成物在方程式里甚至没有区别：算出来结果中正数解代表反应物，负数解代表生成物。只需把负数解移到方程式的另一边即可。
+
+我们得到最终的配平结果：
 \[
     \ce{2 H2S + 1 SO2 -> 3 S v + 2 H2O}
 \]
@@ -601,8 +647,223 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
     \centering
     \includegraphics[width=0.9\textwidth]{resources/Jesse.pdf}
 \end{figure}
-配个方程式，哪有那么难？\UseVerb{angry}
-\subsection{Look in my eyes!}
+配个方程式，真的有那么难吗？\UseVerb{angry}
+\subsection[Look in my eyes!]{Look in my
+eyes!\supercite{BalancingChemicalEquations1997,SimplerMethodChemical1986}}
+
+你有没有想过，你初学时怎么就能一眼看出来\(\ce{2H2O \to 2H2 ^ + O2 ^}\)怎么配平？你有没有想过，
+化学老师口中的\textbf{观察法}到底是什么道理？
+
+其实很简单，针对水分解的反应，我们一眼就能看出来左右两边氧元素各自只出现一次。用合适的系数把氧元素配平后，氢元素加加减减自然也就配平了。
+
+这就是观察法的核心思想：\textbf{优先配平那些只出现一次的元素}。然后从已有的配平结果出发，逐步配平其他元素。
+
+\begin{algorithm}[H]
+    \caption{观察法}
+    \label{alg:inspection}
+    \begin{algorithmic}[1]
+        \State 找到方程式中两边只出现一次的元素集合\(E\)。并优先配平这些元素对应的物质。
+        \State 记已配平物质的集合为\(S\)。
+        \While{存在未配平的元素}
+        \State 找到一个除\(S\)外物种中最多只出现一次的未配平元素\(e\)。
+        \If{元素\(e\)存在}
+        \State 根据\(e\)元素守恒，计算新物种的系数，并加入集合\(S\)。
+        \Else
+        \State 该方程式无法用观察法配平\UseVerb{grin}，改用其他方法。
+        \EndIf
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+用观察法配方程式很像打乒乓球，从一种物质的系数打到另一种物质的系数，逐步推进，直到所有物质都被配平。例如：
+\[
+    \ce{O2 + 4 HCl -> 2 Cl2 + 2 H2O} \qquad \ce{1O2} \to \ce{2H2O} \to
+    \ce{4HCl} \to \ce{2Cl2}
+\]
+\[
+    \ce{4FeS2 + 11O2 -> 2Fe2O3 + 8SO2} \qquad \ce{4FeS2} \to \ce{8SO2} \to
+    \ce{2Fe2O3} \to \ce{11O2}
+\]
+
+从数学上来说，观察法首先是找到系数矩阵中那些只有两个非零元的行\textit{（只出现一次的元素）}，
+然后用那些确定的行反代回只有一个元不同的行\textit{（只有一个物种不同的元素行）}，逐步推进，直到所有行都被消去。
+本质上还是反代法\UseVerb{grin}。
+
+\setlength{\arraycolsep}{8pt}
+\renewcommand\arraystretch{1.5}
+% O2 + 4 HCl -> 2 Cl2 + 2 H2O·
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{O2 + 4 HCl -> 2 Cl2 + 2 H2O}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{1O2} \arrow[r] & \ce{2H2O} \arrow[d] \\
+                \ce{2Cl2} & \ce{4HCl} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{O2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{HCl}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
+                \multicolumn{1}{c}{\ce{Cl2}} \\
+                \hline
+                \ce{O} & \tikzmarknode{fig1-1s}{2} & 0 &
+                \tikzmarknode{fig1-1e}{1} & 0\\
+                \ce{H} & 0 & \tikzmarknode{fig1-2e}{1} &
+                \tikzmarknode{fig1-2s}{2} & 0\\
+                \ce{Cl} & 0 & \tikzmarknode{fig1-3s}{1} & 0 &
+                \tikzmarknode{fig1-3e}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig1-1s}{fig1-1e}{Step 1}
+            \arrowRL{fig1-2s}{fig1-2e}{Step 2}
+            \arrowLR{fig1-3s}{fig1-3e}{Step 3}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+
+% 4FeS2 + 11O2 -> 2Fe2O3 + 8SO2
+
+% todo： A Rhombus shape actually
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{4FeS2 + 11O2 -> 2Fe2O3 + 8SO2}
+        \]
+
+        \[
+            \begin{tikzcd}
+                & \ce{4FeS2} \arrow[dl] \arrow[dr] & \\
+                \ce{8SO2} \arrow[dr] & & \ce{2Fe2O3} \arrow[dl] \\
+                & \ce{11O2} &
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{FeS2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{O2}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{Fe2O3}} &
+                \multicolumn{1}{c}{\ce{SO2}} \\
+                \hline
+                \ce{Fe} & \tikzmarknode{fig2-1s}{1} & 0 &
+                \tikzmarknode{fig2-1e}{2} & 0\\
+                \ce{S} & \tikzmarknode{fig2-1's}{2} & 0 & 0 &
+                \tikzmarknode{fig2-1'e}{1}\\
+                \ce{O} & 0 & \tikzmarknode{fig2-2e}{2} &
+                \tikzmarknode{fig2-2s2}{3} &
+                \tikzmarknode{fig2-2s1}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig2-1s}{fig2-1e}{Step 1}
+            \arrowLR{fig2-1's}{fig2-1'e}{Step 1'}
+            \arrowsToOneRL{fig2-2s1}{fig2-2s2}{fig2-2e}{Step 2}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+
+% 3 Br2 + 8 NH3 -> 6 NH4Br + N2
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{3 Br2 + 8 NH3 -> 6 NH4Br + N2}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{3Br2} \arrow[r] & \ce{6NH4Br} \arrow[d] \\
+                \ce{N2} & \ce{8NH3} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{Br2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{NH3}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NH4Br}} &
+                \multicolumn{1}{c}{\ce{N2}} \\
+                \hline
+                \ce{Br} & \tikzmarknode{fig3-1s}{2} & 0 &
+                \tikzmarknode{fig3-1e}{1} & 0\\
+                \ce{N} & 0 & \tikzmarknode{fig3-3s1}{1} &
+                \tikzmarknode{fig3-3s2}{1} & \tikzmarknode{fig3-3e}{2}\\
+                \ce{H} & 0 & \tikzmarknode{fig3-2e}{3}
+                &\tikzmarknode{fig3-2s}{4} & 0\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig3-1s}{fig3-1e}{Step 1}
+            \arrowsToOneLR{fig3-3s1}{fig3-3s2}{fig3-3e}{Step 3}
+            \arrowRL{fig3-2s}{fig3-2e}{Step 2}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+
+% Cu + 2NO3 - + 4H+ -> Cu2+ + 2NO2 + 2H2O
+
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.45\textwidth}
+        \[
+            \ce{Cu + 2NO3^- + 4H+ -> Cu^{2+} + 2NO2 + 2H2O}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{2NO3^-} \arrow[r] & \ce{2NO2} \arrow[r] &
+                \ce{2H2O} \arrow[d] \\
+                & \ce{4H^+} & \ce{Cu} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.45\textwidth}
+        \[
+            \begin{array}{c|*{5}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{Cu}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NO3^-}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{H^+}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{Cu^{2+}}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NO2}} &
+                \multicolumn{1}{c}{\ce{H2O}} \\
+                \hline
+                \ce{Cu} & \tikzmarknode{5e}{1} & 0 & 0 &
+                \tikzmarknode{5s}{1} & 0 & 0\\
+                \ce{N} & 0 & \tikzmarknode{1s}{1} & 0 & 0
+                &\tikzmarknode{1e}{1} & 0\\
+                \ce{O} & 0 & \tikzmarknode{2s1}{3} & 0 & 0 &
+                \tikzmarknode{2s2}{2} & \tikzmarknode{2e}{1}\\
+                \ce{e-} & 0 & \tikzmarknode{4s1}{1} &
+                \tikzmarknode{4s2}{-1} & \tikzmarknode{4e}{-2} & 0 & 0\\
+                \ce{H} & 0 & 0 & \tikzmarknode{3e}{1} & 0 & 0 &
+                \tikzmarknode{3s}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowRL{5s}{5e}{Step 5}
+            \arrowLR{1s}{1e}{Step 1}
+            \arrowsToOneLR{2s1}{2s2}{2e}{Step 2}
+            \arrowsToOneLR{4s1}{4s2}{4e}{Step 4}
+            \arrowRL{3s}{3e}{Step 3}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
 
 \printbibliography[heading=bibintoc,title={参考文献}]
 \end{document}
