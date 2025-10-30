@@ -159,8 +159,17 @@
 \definecolor{mydefinitioncolor}{RGB}{235, 105,12}
 \definecolor{myquotecolor}{RGB}{161,143,125}
 \definecolor{mycitecolor}{RGB}{0, 102, 204}
-\definecolor{myproblemcolor}{RGB}{255,128,0}
-\definecolor{mydoccolor}{RGB}{141,64,13}
+\definecolor{myexamplecolor}{RGB}{56, 140, 70}
+\definecolor{mydoccolor}{RGB}{0, 73, 145}
+% Original colors
+% \definecolor{myclaimcolor}{RGB}{56, 140, 70}
+% \definecolor{mynotecolor}{RGB}{56, 140, 70}
+% \definecolor{mytheoremcolor}{RGB}{0,102,204}
+% \definecolor{mydefinitioncolor}{RGB}{235, 105,12}
+% \definecolor{myquotecolor}{RGB}{161,143,125}
+% \definecolor{mycitecolor}{RGB}{0, 102, 204}
+% \definecolor{myexamplecolor}{RGB}{255,128,0}
+% \definecolor{mydoccolor}{RGB}{141,64,13}
 
 % There is no ToC in article class
 
@@ -227,31 +236,31 @@
 }
 
 %================================
-% PROBLEM BOX
+% EXAMPLE BOX
 %================================
-\newtcbtheorem{Problem}{Problem}
+\newtcbtheorem{Example}{Example}
 {%
     enhanced,
     breakable,
-    colback = myproblemcolor!10,
+    colback = myexamplecolor!10,
     frame hidden,
     boxrule = 0sp,
-    borderline west = {2pt}{0pt}{myproblemcolor},
+    borderline west = {2pt}{0pt}{myexamplecolor},
     sharp corners,
     detach title,
     before upper = \tcbtitle\par\smallskip,
-    coltitle = myproblemcolor!85!black,
+    coltitle = myexamplecolor!85!black,
     fonttitle = \bfseries\sffamily,
     description font = \mdseries,
     separator sign none,
-    segmentation style={solid, myproblemcolor!85!black},
+    segmentation style={solid, myexamplecolor!85!black},
 }
-{problem}
+{example}
 
-\newenvironment{problem}[2][]{%
-    \begin{Problem}{#2}{#1}%
+\newenvironment{example}[2][]{%
+    \begin{Example}{#2}{#1}%
     }{%
-    \end{Problem}%
+    \end{Example}%
 }
 %================================
 % CLAIM BOX

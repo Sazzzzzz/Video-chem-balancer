@@ -1,12 +1,12 @@
 \documentclass{ctexart}
 \include{./header_art.tex}
 \usepackage[version=4]{mhchem}
+\usepackage{chemmacros}
 \usepackage[a4paper,scale=0.8]{geometry}
 \usepackage{systeme}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-
-\usetikzlibrary{tikzmark,calc}
+\usetikzlibrary{tikzmark,calc,shapes.misc,positioning}
 
 \newcommand{\grayplus}{\,\color{lightgray}+\,}
 \newcommand{\grayto}{\,\color{lightgray}\to\,}
@@ -16,7 +16,23 @@
 \DeclareMathOperator{\Span}{span}
 \DeclareMathOperator{\Hom}{Hom}
 
+% xmark and cmark from
+% https://tex.stackexchange.com/questions/42619/xmark-that-complements-the-ams-checkmark/655719#655719
+\newcommand{\xmark}{%
+    \tikz[scale=0.23] {
+        \draw[line width=0.7,line cap=round] (0,0) to [bend left=6] (1,1);
+        \draw[line width=0.7,line cap=round] (0.2,0.95) to [bend
+        right=3] (0.8,0.05);
+}}
+\newcommand{\cmark}{%
+    \tikz[scale=0.23] {
+        \draw[line width=0.7,line cap=round] (0.25,0) to [bend left=10] (1,1);
+        \draw[line width=0.8,line cap=round] (0,0.35) to [bend
+        right=1] (0.23,0);
+}}
+
 \renewcommand{\L}{\mathscr{L}}
+\renewcommand{\e}{\mathrm{e}^{-}}
 
 % Arrow commands: #1=start node, #2=end node, #3=label
 \newcommand{\arrowLR}[3]{%
@@ -71,25 +87,26 @@
 \section[线性方程组]{线性方程组\supercite{ChemicalEquationBalancing1982}}
 \subsection{蒙昧未开}
 我想最开始学习的时候，每个人都把化学方程式配平当成一个数学游戏。
-
-最简单的，我们考虑化学方程式\(\ce{H2S + SO2 \to S v + H2O}\) 。
-设系数\[
-    x \ce{H2S} + y \ce{SO2} \to z \ce{S} + t \ce{H2O}
-\]
-求解：
-\[
-    \begin{array}{lcr@{\quad}rcl@{\quad}l}
-        \ce{S}:  x+y &=& z & z &=& \frac{3t}{2} & \\
-        \ce{O}: 2x &=& t & \implies  \quad x &=& \frac{t}{2} &
-        \implies \quad \text{取 } t=2: \\
-        \ce{H}: 2y &=& 2t & y &=& t &
-    \end{array}
-    \begin{cases}
-        x = 1 \\
-        y = 2 \\
-        z = 3
-    \end{cases}
-\]
+\begin{example}{方程组配平}
+    考虑化学方程式\(\ce{H2S + SO2 \to S v + H2O}\) 。
+    设系数\[
+        x \ce{H2S} + y \ce{SO2} \to z \ce{S} + t \ce{H2O}
+    \]
+    求解：
+    \[
+        \begin{array}{lcr@{\quad}rcl@{\quad}l}
+            \ce{S}:  x+y &=& z & z &=& \frac{3t}{2} & \\
+            \ce{O}: 2x &=& t & \implies  \quad x &=& \frac{t}{2} &
+            \implies \quad \text{取 } t=2: \\
+            \ce{H}: 2y &=& 2t & y &=& t &
+        \end{array}
+        \begin{cases}
+            x = 1 \\
+            y = 2 \\
+            z = 3
+        \end{cases}
+    \]
+\end{example}
 
 于是\[
     \ce{H2S + 2 SO2 -> 3 S v + 2 H2O}
@@ -261,7 +278,7 @@
 
 于是我们知道，所有可配平的化学方程式构成一个\textbf{线性空间}！\footnote{当然这不是一个严谨的证明，
 实际上只证明了这个特定的方程式的解集是某线性空间的子空间。严谨的证明是无聊且平凡的\UseVerb{grin}}。结合我们先前的推论，
-不难发现这实际上就是系数矩阵\(A\) 的零空间\(\nullspace A\) 那么求解化学方程式的全部任务就完全变成了求解这个线性空间的一个基底的问题。
+不难发现这实际上就是系数矩阵\(A\) 的零空间\(\nullspace A\) ，那么求解化学方程式的全部任务就完全变成了求解这个线性空间的一个基底的问题。
 
 \subsection{机械化的消元法}
 我们求解一下前面的线性方程组：
@@ -425,9 +442,9 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
 \begin{definition}{初等行变换}
     对于一个线性方程组（以及其对应的增广矩阵），我们允许以下三种操作：
     \begin{itemize}
-        \item 交换两行
-        \item 将某一行乘以非零常数
-        \item 将某一行加上另一行的若干倍
+        \item 交换两个方程的位置/交换两行
+        \item 方程两边同乘非零常数/将某一行乘以非零常数
+        \item 将某一行/方程加上另一行/方程的若干倍
     \end{itemize}
 \end{definition}
 
@@ -535,7 +552,7 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
 \begin{center}
     \begin{tabular}{rcl}
         & \quad & $\placeholder{=}$ 配平方法数：$1$ \\
-        \ce{Br2 + NH3 \to NH4Br + N2 ^}
+        \ce{Br2 + NH3 \to NH4Br + N2}
         & & $+$ 元素数：$3$ \\
         & & $=$ 物种数：$4$ \\[1em]
 
@@ -648,11 +665,11 @@ Echelon Form，RREF）。求解线性方程组的根本方法，就是把系数�
     \includegraphics[width=0.9\textwidth]{resources/Jesse.pdf}
 \end{figure}
 配个方程式，真的有那么难吗？\UseVerb{angry}
-\subsection[Look in my eyes!]{Look in my
-eyes!\supercite{BalancingChemicalEquations1997,SimplerMethodChemical1986}}
+\subsection[我们真的需要化合价吗？]{我们真的需要化合价吗？
+\supercite{BalancingChemicalEquations1997,SimplerMethodChemical1986}}
 
 你有没有想过，你初学时怎么就能一眼看出来\(\ce{2H2O \to 2H2 ^ + O2 ^}\)怎么配平？你有没有想过，
-化学老师口中的\textbf{观察法}到底是什么道理？
+化学老师口中的\sout{瞪眼法}\textbf{观察法}到底是什么道理？
 
 其实很简单，针对水分解的反应，我们一眼就能看出来左右两边氧元素各自只出现一次。用合适的系数把氧元素配平后，氢元素加加减减自然也就配平了。
 
@@ -688,182 +705,438 @@ eyes!\supercite{BalancingChemicalEquations1997,SimplerMethodChemical1986}}
 从数学上来说，观察法首先是找到系数矩阵中那些只有两个非零元的行\textit{（只出现一次的元素）}，
 然后用那些确定的行反代回只有一个元不同的行\textit{（只有一个物种不同的元素行）}，逐步推进，直到所有行都被消去。
 本质上还是反代法\UseVerb{grin}。
+{% Limit scope for array settings
+    \setlength{\arraycolsep}{8pt}
+    \renewcommand\arraystretch{1.5}
+    % O2 + 4 HCl -> 2 Cl2 + 2 H2O·
+    \begin{center}
+        \noindent
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \ce{O2 + 4 HCl -> 2 Cl2 + 2 H2O}
+            \]
 
-\setlength{\arraycolsep}{8pt}
-\renewcommand\arraystretch{1.5}
-% O2 + 4 HCl -> 2 Cl2 + 2 H2O·
-\begin{center}
-    \noindent
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \ce{O2 + 4 HCl -> 2 Cl2 + 2 H2O}
-        \]
+            \[
+                \begin{tikzcd}
+                    \ce{1O2} \arrow[r] & \ce{2H2O} \arrow[d] \\
+                    \ce{2Cl2} & \ce{4HCl} \arrow[l]
+                \end{tikzcd}
+            \]
+        \end{minipage}%
+        \hspace{0.01\textwidth}
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \begin{array}{c|*{3}{c@{\grayplus}}c}
+                    & \multicolumn{1}{c@{\grayplus}}{\ce{O2}} &
+                    \multicolumn{1}{c@{\grayto}}{\ce{HCl}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
+                    \multicolumn{1}{c}{\ce{Cl2}} \\
+                    \hline
+                    \ce{O} & \tikzmarknode{fig1-1s}{2} & 0 &
+                    \tikzmarknode{fig1-1e}{1} & 0\\
+                    \ce{H} & 0 & \tikzmarknode{fig1-2e}{1} &
+                    \tikzmarknode{fig1-2s}{2} & 0\\
+                    \ce{Cl} & 0 & \tikzmarknode{fig1-3s}{1} & 0 &
+                    \tikzmarknode{fig1-3e}{2}\\[1ex]
+                \end{array}
+            \]
+            \begin{tikzpicture}[overlay,remember picture]
+                \arrowLR{fig1-1s}{fig1-1e}{Step 1}
+                \arrowRL{fig1-2s}{fig1-2e}{Step 2}
+                \arrowLR{fig1-3s}{fig1-3e}{Step 3}
+            \end{tikzpicture}
+        \end{minipage}
+    \end{center}
 
-        \[
-            \begin{tikzcd}
-                \ce{1O2} \arrow[r] & \ce{2H2O} \arrow[d] \\
-                \ce{2Cl2} & \ce{4HCl} \arrow[l]
-            \end{tikzcd}
-        \]
-    \end{minipage}%
-    \hspace{0.01\textwidth}
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \begin{array}{c|*{3}{c@{\grayplus}}c}
-                & \multicolumn{1}{c@{\grayplus}}{\ce{O2}} &
-                \multicolumn{1}{c@{\grayto}}{\ce{HCl}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
-                \multicolumn{1}{c}{\ce{Cl2}} \\
-                \hline
-                \ce{O} & \tikzmarknode{fig1-1s}{2} & 0 &
-                \tikzmarknode{fig1-1e}{1} & 0\\
-                \ce{H} & 0 & \tikzmarknode{fig1-2e}{1} &
-                \tikzmarknode{fig1-2s}{2} & 0\\
-                \ce{Cl} & 0 & \tikzmarknode{fig1-3s}{1} & 0 &
-                \tikzmarknode{fig1-3e}{2}\\[1ex]
-            \end{array}
-        \]
-        \begin{tikzpicture}[overlay,remember picture]
-            \arrowLR{fig1-1s}{fig1-1e}{Step 1}
-            \arrowRL{fig1-2s}{fig1-2e}{Step 2}
-            \arrowLR{fig1-3s}{fig1-3e}{Step 3}
-        \end{tikzpicture}
-    \end{minipage}
-\end{center}
+    % 4FeS2 + 11O2 -> 2Fe2O3 + 8SO2
 
-% 4FeS2 + 11O2 -> 2Fe2O3 + 8SO2
+    % todo： A Rhombus shape actually
+    \begin{center}
+        \noindent
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \ce{4FeS2 + 11O2 -> 2Fe2O3 + 8SO2}
+            \]
 
-% todo： A Rhombus shape actually
-\begin{center}
-    \noindent
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \ce{4FeS2 + 11O2 -> 2Fe2O3 + 8SO2}
-        \]
+            \[
+                \begin{tikzcd}
+                    & \ce{4FeS2} \arrow[dl] \arrow[dr] & \\
+                    \ce{8SO2} \arrow[dr] & & \ce{2Fe2O3} \arrow[dl] \\
+                    & \ce{11O2} &
+                \end{tikzcd}
+            \]
+        \end{minipage}%
+        \hspace{0.01\textwidth}
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \begin{array}{c|*{3}{c@{\grayplus}}c}
+                    & \multicolumn{1}{c@{\grayplus}}{\ce{FeS2}} &
+                    \multicolumn{1}{c@{\grayto}}{\ce{O2}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{Fe2O3}} &
+                    \multicolumn{1}{c}{\ce{SO2}} \\
+                    \hline
+                    \ce{Fe} & \tikzmarknode{fig2-1s}{1} & 0 &
+                    \tikzmarknode{fig2-1e}{2} & 0\\
+                    \ce{S} & \tikzmarknode{fig2-1's}{2} & 0 & 0 &
+                    \tikzmarknode{fig2-1'e}{1}\\
+                    \ce{O} & 0 & \tikzmarknode{fig2-2e}{2} &
+                    \tikzmarknode{fig2-2s2}{3} &
+                    \tikzmarknode{fig2-2s1}{2}\\[1ex]
+                \end{array}
+            \]
+            \begin{tikzpicture}[overlay,remember picture]
+                \arrowLR{fig2-1s}{fig2-1e}{Step 1}
+                \arrowLR{fig2-1's}{fig2-1'e}{Step 1'}
+                \arrowsToOneRL{fig2-2s1}{fig2-2s2}{fig2-2e}{Step 2}
+            \end{tikzpicture}
+        \end{minipage}
+    \end{center}
 
-        \[
-            \begin{tikzcd}
-                & \ce{4FeS2} \arrow[dl] \arrow[dr] & \\
-                \ce{8SO2} \arrow[dr] & & \ce{2Fe2O3} \arrow[dl] \\
-                & \ce{11O2} &
-            \end{tikzcd}
-        \]
-    \end{minipage}%
-    \hspace{0.01\textwidth}
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \begin{array}{c|*{3}{c@{\grayplus}}c}
-                & \multicolumn{1}{c@{\grayplus}}{\ce{FeS2}} &
-                \multicolumn{1}{c@{\grayto}}{\ce{O2}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{Fe2O3}} &
-                \multicolumn{1}{c}{\ce{SO2}} \\
-                \hline
-                \ce{Fe} & \tikzmarknode{fig2-1s}{1} & 0 &
-                \tikzmarknode{fig2-1e}{2} & 0\\
-                \ce{S} & \tikzmarknode{fig2-1's}{2} & 0 & 0 &
-                \tikzmarknode{fig2-1'e}{1}\\
-                \ce{O} & 0 & \tikzmarknode{fig2-2e}{2} &
-                \tikzmarknode{fig2-2s2}{3} &
-                \tikzmarknode{fig2-2s1}{2}\\[1ex]
-            \end{array}
-        \]
-        \begin{tikzpicture}[overlay,remember picture]
-            \arrowLR{fig2-1s}{fig2-1e}{Step 1}
-            \arrowLR{fig2-1's}{fig2-1'e}{Step 1'}
-            \arrowsToOneRL{fig2-2s1}{fig2-2s2}{fig2-2e}{Step 2}
-        \end{tikzpicture}
-    \end{minipage}
-\end{center}
+    % 3 Br2 + 8 NH3 -> 6 NH4Br + N2
+    \begin{center}
+        \noindent
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \ce{3 Br2 + 8 NH3 -> 6 NH4Br + N2}
+            \]
 
-% 3 Br2 + 8 NH3 -> 6 NH4Br + N2
-\begin{center}
-    \noindent
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \ce{3 Br2 + 8 NH3 -> 6 NH4Br + N2}
-        \]
+            \[
+                \begin{tikzcd}
+                    \ce{3Br2} \arrow[r] & \ce{6NH4Br} \arrow[d] \\
+                    \ce{N2} & \ce{8NH3} \arrow[l]
+                \end{tikzcd}
+            \]
+        \end{minipage}%
+        \hspace{0.01\textwidth}
+        \begin{minipage}[c]{0.4\textwidth}
+            \[
+                \begin{array}{c|*{3}{c@{\grayplus}}c}
+                    & \multicolumn{1}{c@{\grayplus}}{\ce{Br2}} &
+                    \multicolumn{1}{c@{\grayto}}{\ce{NH3}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{NH4Br}} &
+                    \multicolumn{1}{c}{\ce{N2}} \\
+                    \hline
+                    \ce{Br} & \tikzmarknode{fig3-1s}{2} & 0 &
+                    \tikzmarknode{fig3-1e}{1} & 0\\
+                    \ce{N} & 0 & \tikzmarknode{fig3-3s1}{1} &
+                    \tikzmarknode{fig3-3s2}{1} & \tikzmarknode{fig3-3e}{2}\\
+                    \ce{H} & 0 & \tikzmarknode{fig3-2e}{3}
+                    &\tikzmarknode{fig3-2s}{4} & 0\\[1ex]
+                \end{array}
+            \]
+            \begin{tikzpicture}[overlay,remember picture]
+                \arrowLR{fig3-1s}{fig3-1e}{Step 1}
+                \arrowsToOneLR{fig3-3s1}{fig3-3s2}{fig3-3e}{Step 3}
+                \arrowRL{fig3-2s}{fig3-2e}{Step 2}
+            \end{tikzpicture}
+        \end{minipage}
+    \end{center}
 
-        \[
-            \begin{tikzcd}
-                \ce{3Br2} \arrow[r] & \ce{6NH4Br} \arrow[d] \\
-                \ce{N2} & \ce{8NH3} \arrow[l]
-            \end{tikzcd}
-        \]
-    \end{minipage}%
-    \hspace{0.01\textwidth}
-    \begin{minipage}[c]{0.4\textwidth}
-        \[
-            \begin{array}{c|*{3}{c@{\grayplus}}c}
-                & \multicolumn{1}{c@{\grayplus}}{\ce{Br2}} &
-                \multicolumn{1}{c@{\grayto}}{\ce{NH3}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{NH4Br}} &
-                \multicolumn{1}{c}{\ce{N2}} \\
-                \hline
-                \ce{Br} & \tikzmarknode{fig3-1s}{2} & 0 &
-                \tikzmarknode{fig3-1e}{1} & 0\\
-                \ce{N} & 0 & \tikzmarknode{fig3-3s1}{1} &
-                \tikzmarknode{fig3-3s2}{1} & \tikzmarknode{fig3-3e}{2}\\
-                \ce{H} & 0 & \tikzmarknode{fig3-2e}{3}
-                &\tikzmarknode{fig3-2s}{4} & 0\\[1ex]
-            \end{array}
-        \]
-        \begin{tikzpicture}[overlay,remember picture]
-            \arrowLR{fig3-1s}{fig3-1e}{Step 1}
-            \arrowsToOneLR{fig3-3s1}{fig3-3s2}{fig3-3e}{Step 3}
-            \arrowRL{fig3-2s}{fig3-2e}{Step 2}
-        \end{tikzpicture}
-    \end{minipage}
-\end{center}
+    % Cu + 2NO3 - + 4H+ -> Cu2+ + 2NO2 + 2H2O
 
-% Cu + 2NO3 - + 4H+ -> Cu2+ + 2NO2 + 2H2O
+    \begin{center}
+        \noindent
+        \begin{minipage}[c]{0.42\textwidth}
+            \[
+                \ce{Cu + 2NO3^- + 4H+ -> Cu^{2+} + 2NO2 + 2H2O}
+            \]
 
+            \[
+                \begin{tikzcd}
+                    \ce{2NO3^-} \arrow[r] & \ce{2NO2} \arrow[r] &
+                    \ce{2H2O} \arrow[d] \\
+                    & \ce{4H^+} & \ce{Cu} \arrow[l]
+                \end{tikzcd}
+            \]
+        \end{minipage}%
+        \hspace{0.01\textwidth}
+        \begin{minipage}[c]{0.5\textwidth}
+            \[
+                \begin{array}{c|*{5}{c@{\grayplus}}c}
+                    & \multicolumn{1}{c@{\grayplus}}{\ce{Cu}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{NO3^-}} &
+                    \multicolumn{1}{c@{\grayto}}{\ce{H^+}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{Cu^{2+}}} &
+                    \multicolumn{1}{c@{\grayplus}}{\ce{NO2}} &
+                    \multicolumn{1}{c}{\ce{H2O}} \\
+                    \hline
+                    \ce{Cu} & \tikzmarknode{5e}{1} & 0 & 0 &
+                    \tikzmarknode{5s}{1} & 0 & 0\\
+                    \ce{N} & 0 & \tikzmarknode{1s}{1} & 0 & 0
+                    &\tikzmarknode{1e}{1} & 0\\
+                    \ce{O} & 0 & \tikzmarknode{2s1}{3} & 0 & 0 &
+                    \tikzmarknode{2s2}{2} & \tikzmarknode{2e}{1}\\
+                    \ce{e-} & 0 & \tikzmarknode{4s1}{1} &
+                    \tikzmarknode{4s2}{-1} & \tikzmarknode{4e}{-2} & 0 & 0\\
+                    \ce{H} & 0 & 0 & \tikzmarknode{3e}{1} & 0 & 0 &
+                    \tikzmarknode{3s}{2}\\[1ex]
+                \end{array}
+            \]
+            \begin{tikzpicture}[overlay,remember picture]
+                \arrowRL{5s}{5e}{Step 5}
+                \arrowLR{1s}{1e}{Step 1}
+                \arrowsToOneLR{2s1}{2s2}{2e}{Step 2}
+                \arrowsToOneLR{4s1}{4s2}{4e}{Step 4}
+                \arrowRL{3s}{3e}{Step 3}
+            \end{tikzpicture}
+        \end{minipage}
+    \end{center}
+    % todo: how many percentages of equations can be balanced that way
+    % todo: Mathematically equivalent to whether the matrix is
+    % already in REF form
+}
+
+观察法确实方便，但其严重依赖于方程式一般只有一组解。并且不是所有化学方程式都能用观察法配平。例如38324、14122:
+% 3Cu + 8HNO3 -> 3Cu(NO3)2 + 2NO ^ + 4H2O
 \begin{center}
     \noindent
     \begin{minipage}[c]{0.45\textwidth}
         \[
-            \ce{Cu + 2NO3^- + 4H+ -> Cu^{2+} + 2NO2 + 2H2O}
+            \ce{3Cu + 8HNO3 -> 3Cu(NO3)2 + 2NO ^ + 4H2O}
         \]
-
         \[
-            \begin{tikzcd}
-                \ce{2NO3^-} \arrow[r] & \ce{2NO2} \arrow[r] &
-                \ce{2H2O} \arrow[d] \\
-                & \ce{4H^+} & \ce{Cu} \arrow[l]
-            \end{tikzcd}
-        \]
-    \end{minipage}%
-    \hspace{0.01\textwidth}
-    \begin{minipage}[c]{0.45\textwidth}
-        \[
-            \begin{array}{c|*{5}{c@{\grayplus}}c}
-                & \multicolumn{1}{c@{\grayplus}}{\ce{Cu}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{NO3^-}} &
-                \multicolumn{1}{c@{\grayto}}{\ce{H^+}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{Cu^{2+}}} &
-                \multicolumn{1}{c@{\grayplus}}{\ce{NO2}} &
-                \multicolumn{1}{c}{\ce{H2O}} \\
+            \begin{array}{c|ccccc}
+                & \ce{Cu} & \ce{HNO3} & \ce{Cu(NO3)2} & \ce{NO} &
+                \ce{H2O} \\
                 \hline
-                \ce{Cu} & \tikzmarknode{5e}{1} & 0 & 0 &
-                \tikzmarknode{5s}{1} & 0 & 0\\
-                \ce{N} & 0 & \tikzmarknode{1s}{1} & 0 & 0
-                &\tikzmarknode{1e}{1} & 0\\
-                \ce{O} & 0 & \tikzmarknode{2s1}{3} & 0 & 0 &
-                \tikzmarknode{2s2}{2} & \tikzmarknode{2e}{1}\\
-                \ce{e-} & 0 & \tikzmarknode{4s1}{1} &
-                \tikzmarknode{4s2}{-1} & \tikzmarknode{4e}{-2} & 0 & 0\\
-                \ce{H} & 0 & 0 & \tikzmarknode{3e}{1} & 0 & 0 &
-                \tikzmarknode{3s}{2}\\[1ex]
+                \ce{Cu} & 1 & 0 & 1 & 0 & 0\\
+                \ce{N} & 0 & 1 & 2 & 1 & 0\\
+                \ce{H} & 0 & 1 & 0 & 0 & 2\\
+                \ce{O} & 0 & 3 & 6 & 1 & 1\\
             \end{array}
         \]
-        \begin{tikzpicture}[overlay,remember picture]
-            \arrowRL{5s}{5e}{Step 5}
-            \arrowLR{1s}{1e}{Step 1}
-            \arrowsToOneLR{2s1}{2s2}{2e}{Step 2}
-            \arrowsToOneLR{4s1}{4s2}{4e}{Step 4}
-            \arrowRL{3s}{3e}{Step 3}
-        \end{tikzpicture}
     \end{minipage}
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.3\textwidth}
+        \[
+            \begin{cases}
+                \xmark \quad \ce{Cu} \to \ce{Cu(NO3)2} \\
+                \xmark \quad \ce{2HNO3} \to \ce{H2O} \\
+            \end{cases}
+        \]
+    \end{minipage}
+    \label{fig:failed inspection}
 \end{center}
 
+我们找不到任何只出现一次的元素，观察法无法进行\UseVerb{sad}
+
+\subsection{为什么化合价这么好用？}
+
+其实我们细想想，高中学到的化合价，几乎是一种神迹。在\cref{fig:failed inspection}中系数矩阵如此复杂的情况下，化合价法却能轻松配平：
+% Inspired by https://www.zhihu.com/question/566006511/answer/3312054930
+
+\[
+    \vspace{5mm}
+    \chemsetup[redox]{roman=false}
+    \ce{
+        3\OX{r1,\ox*{0, Cu}} + 8H\OX{o1,\ox*{5, N}}O3 = 3 \OX{o2,\ox*{2,
+        Cu}}(NO3)2 + 2\OX{r2,\ox*{2, N}}O ^ + 4H2O
+    }
+    \redox(r1,o2)[black,-stealth]{\small 失$3\times 2\e$}
+    \redox(o1,r2)[black,-stealth][-1]{\small 得$2\times 3\e$}
+\]
+这是为什么？
+
+\subsubsection{万变不离其宗}
+% todo: maybe better words?
+首先我们要确信，化合价法没有天外来物般的添加新的化学原理，它导出的物质关系本质上还是物质守恒的推论。
+配平方程式的原理有且仅有\textbf{物质守恒}这一条。以上例为例：
+
+\[
+    \begin{gathered}
+        \ce{3Cu + 8HNO3 -> 3Cu(NO3)2 + 2NO ^ + 4H2O} \\[0.5em]
+        \begin{array}{c|ccccc}
+            & \ce{Cu} & \ce{HNO3} & \ce{Cu(NO3)2} & \ce{NO} &
+            \ce{H2O} \\
+            \hline
+            \ce{Cu} & 1 & 0 & 1 & 0 & 0\\
+            \ce{N} & 0 & 1 & 2 & 1 & 0\\
+            \ce{H} & 0 & 1 & 0 & 0 & 2\\
+            \ce{O} & 0 & 3 & 6 & 1 & 1\\
+        \end{array}
+    \end{gathered}
+\]
+\[
+    \begin{tikzcd}[column sep=large, row sep=large]
+        \begin{bmatrix}
+            1 & 0 & 1 & 0 & 0  \\
+            0 & 1 & 0 & 0 & 2  \\
+            0 & 0 & 2 & 1 & -2 \\
+            0 & 0 & 6 & 1 & 5  \\
+        \end{bmatrix}
+        \arrow[r, "R_{4} + 3R_{2}"] &
+        \begin{bmatrix}
+            1 & 0 & 1 & 0  & 0  \\
+            0 & 1 & 0 & 0  & 2  \\
+            0 & 0 & 2 & 1  & -2 \\
+            0 & 0 & 0 & -2 & 1  \\
+        \end{bmatrix}
+        \arrow[d, "R_{3}+2R_{4}"] \\
+        \subnode{matrix}{
+            \begin{bmatrix}
+                \subnode{pivot1}{1} & 0 & 0 &
+                \subnode{pivot2}{\frac{3}{2}}  & 0  \\
+                0 & 1 & 0 & 0  & 2  \\
+                0 & 0 & 2 & -3 & 0 \\
+                0 & 0 & 0 & -2 & 1  \\
+        \end{bmatrix}} &
+        \begin{bmatrix}
+            1 & 0 & 1 & 0  & 0  \\
+            0 & 1 & 0 & 0  & 2  \\
+            0 & 0 & 2 & -3 & 0 \\
+            0 & 0 & 0 & -2 & 1  \\
+        \end{bmatrix}
+        \arrow[l, "R_{1}-\frac{1}{2}R_{3}"]
+        \begin{tikzpicture}[overlay, remember picture]
+            \draw[red, thick, circle] (pivot1.center) circle (0.3cm);
+            \draw[red, thick, circle] (pivot2.center) circle (0.3cm);
+            \node[blue, above=0.1cm of matrix] {$n(\ce{Cu}): n(\ce{NO}) = 3:2$};
+        \end{tikzpicture}
+    \end{tikzcd}
+\]
+% Similarly for Cu + 4HNO3 -> Cu(NO3)2 + 2NO2 + 2H2O
+% But it's too long to fit here :(
+
+\subsubsection{化合价为什么能帮忙？}
+细想一下，化合价法最重要的一步，是通过化合价的升降确定了某两种元素的系数，从而确定两种物质的系数。相当于观察法中优先配平某个只出现一次的元素。
+
+从数学的角度看，化学性质、电子转移都不能解释为什么元素赋上一个奇怪的数字可以直接确定方程组中某两个变量的比值。化合价最重要的性质只有一条：
+\textbf{一个物种内所有元素化合价的代数和为零}~\cite[98]{HuaXueJiuNianJiShangCe}。
+\vspace{1em}
+
+\noindent
+\begin{minipage}[c]{0.4\textwidth}
+    以下氧化还原反应为例：
+    \begin{gather*}
+        % todo: add valence labels
+        \ce{Br2 + NH3 \to HBr + N2}\\[1em]
+        \begin{array}{lcr}
+            \ce{Br}: 0 & &\ce{Br}: -1\\
+            \ce{N}: -3 &\Longrightarrow &\ce{N}: 0\\
+            \ce{H}: -1 & &\ce{H}: +1
+        \end{array}
+    \end{gather*}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.55\textwidth}
+    对于一个配平了的化学方程式，记元素\(e\)的化合价前后为\(v(e)\)与\(v(e^{\prime})\)，系数为\(k_{e}\)。\\[1em]
+    由于每个物种内化合价都为零，那么反应物/生成物化合价的总和也为零：
+    \begin{align*}
+        k_{\ce{Br}} v(\ce{Br}) + k_{\ce{N}} v(\ce{N}) + k_{\ce{H}}
+        v(\ce{H}) &= 0\\
+        k_{\ce{Br}} v'(\ce{Br}) + k_{\ce{N}} v'(\ce{N}) + k_{\ce{H}}
+        v'(\ce{H}) &= 0
+    \end{align*}
+\end{minipage}
+\vspace{1em}
+
+于是，就有：
+\[
+    k_{\ce{Br}} v(\ce{Br}) + k_{\ce{N}} v(\ce{N}) + k_{\ce{H}}
+    v(\ce{H}) = k_{\ce{Br}} v'(\ce{Br}) + k_{\ce{N}} v'(\ce{N}) + k_{\ce{H}}
+    v'(\ce{H})
+\]
+\[
+    k_{\ce{Br}} (v'(\ce{Br}) - v(\ce{Br})) + k_{\ce{N}} (v'(\ce{N}) -
+    v(\ce{N})) + k_{\ce{H}} (v'(\ce{H}) - v(\ce{H})) = 0
+\]
+\[
+    k_{\ce{Br}} \Delta v(\ce{Br}) + k_{\ce{N}} \Delta v(\ce{N}) + k_{\ce{H}}
+    \Delta v(\ce{H}) = 0
+\]
+
+这就是氧化还原反应中最根本的原理：\textbf{\hl{升降化合价相等}}。\[
+    \sum_{e\in \text{elements}} k_{e} \Delta v(e) = 0
+\]
+
+一般来说氧化还原反应中只有两种元素的化合价发生变化\footnote{对于一些歧化/归中反应，只需把相应元素及其系数分成两部分即可}，
+所以可以直接解出它们的系数比值，从而配平整个方程式。这就是化合价法的数学原理。
+\subsubsection{电子是几价的？}
+
+以上价态原理的推导对所有化合物都成立，但在离子中，并非所有元素的化合价之和为零。为什么仍然可以用化合价法配平离子反应呢？
+\vspace{1em}
+
+\noindent
+\begin{minipage}[c]{0.2\textwidth}
+    \[
+        \ce{\ox{+7,Mn}\ox{-2,O}4^-}
+    \]
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.75\textwidth}
+    实际上，对于离子而言，物质价态的代数和等于其所带电荷数。\\由于电荷守恒，故依然有\(\sum_{e\in
+        \text{products}} k_{e}v(e) = \sum_{e \in \text{reactants}}
+    k_{e}v'(e)\)。\\因而升降化合价依然相等。
+\end{minipage}
+\vspace{1em}
+
+所以，\textbf{化合价守恒的本质，就是电荷守恒}。
+
+所以，在有电子的化学方程式中，我们可以定义电子的化合价就是\(-1\) 。
+
+\subsubsection{化合价是随机的吗？}
+
+接下来我们配平方程式4-11-2-8:
+\[
+    \ce{FeS2 + O2 - Fe2O3 + SO2}
+\]
+
+如果从化学的角度看，这个氧化还原反应中，硫的化合价从\(-1\) 升高到\(+4\)，铁的化合价从\(0\) 升高到\(+3\)，
+出现了两种被氧化的元素，以至于成为高中化学配平的拦路虎之一。
+
+但是从数学的角度看，我们不妨把所有的罪行都放在一个元素上，只需保证化合价代数和为零就好了。于是：\sout{假装}规定\(\ce{FeS2}\)
+中硫的化合价为\(+4\)，那铁的化合价就是\(-8\) 。
+此时化学老师看到可能会有些生气，但我们暂时先不要管他。
+
+于是\(Fe\) 的化合价由\(-8\)升高到\(+3\)，转移11个电子；直接可以配平得到：\[
+    \ce{11FeS2 + 4O2 -> 11Fe2O3 + 22SO2}
+\]
+
+这样做就引出了一个有趣的问题：\textbf{化合价是随机给定的一组数吗？}
+
+\textit{To be continued...}
+% \subsection{半反应法}
+
+\section{还能再给力一点吗，老师？}
+\subsection{化学方程式解析}
+
+计算机配平化学方程式的最大困难，不在于求解线性方程组，而在于如何把化学式转换成元素列表\UseVerb{surprised}。
+
+从语法上看，化学式涉及到若干层括号嵌套与下标，超越了正则表达式的能力范围，但可以使用上下文无关文法（Context-Free Grammar, CFG）来描述。
+
+\vspace{0.5em}
+
+现已经有不少成熟的化学式解析器，例如
+\href{https://github.com/bjodah/chempy}{\texttt{chempy}}，这里只简单介绍方程式的 BNF 文法表示：
+
+\begin{tcblisting}{
+        colback=gray!10,
+        colframe=gray!50,
+        title=BNF 文法规则,
+        listing only,
+        listing options={
+            language=bash,
+            breaklines=true,
+            basicstyle=\ttfamily\small,
+            showstringspaces=false
+        }
+    }
+    formula      → molecule (DOT [NUMBER] molecule)*
+    molecule     → term+ [charge]
+    charge       → [NUMBER] (PLUS | MINUS)
+    term         → element_unit | group_unit
+    element_unit → ELEMENT [NUMBER]
+    group_unit   → LPAREN formula RPAREN [NUMBER]
+\end{tcblisting}
+
+\vspace{0.5em}
+
+有趣的是，当线性解析化学方程式时，在不加空格的情况下，因为无法区分数字是元素下标还是电荷数目，$\ce{Fe^3+}$ 与
+$\ce{NH4+}$ 将必有一个解析错误。因此使用 LL(2) 且包括空格的解析器能够更好地处理化学方程式。
+
+具体实现可参考
+\href{https://github.com/Sazzzzzz/Video-chem-balancer}{\texttt{Video-chem-balancer}}。
+% \subsection{零空间求解}
+% \subsection{仿射幺半群}
 \printbibliography[heading=bibintoc,title={参考文献}]
 \end{document}
