@@ -1,10 +1,13 @@
 """A parser for chemical formulas."""
 
-import re
 import logging
+import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Counter, NamedTuple, Optional
+from types import MappingProxyType
+from typing import Any, NamedTuple, Optional, TypeAlias
+
+from utils import Counter, scale
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,11 +61,6 @@ BRACKET_PAIRS = {
     TokenType.LBRACKET: TokenType.RBRACKET,
     TokenType.LBRACE: TokenType.RBRACE,
 }
-
-
-def scale_counter(c: Counter, k: int) -> Counter:
-    """Helper function to multiply all counts in a Counter by k."""
-    return Counter({key: value * k for key, value in c.items()})
 
 
 def tokenize(formula: str):
@@ -146,7 +144,9 @@ class FormulaParser:
         return None
 
     def parse_formula(self):
-        """formula -> molecule (DOT molecule)*"""
+        """formula -> molecule (DOT molecule)*
+
+        This is the entry point for parsing a chemical formula."""
         molecules = [{"molecule": self.parse_charged_molecule(), "count": 1}]
 
         while (token := self.current_token) and token.type == TokenType.DOT:
@@ -301,19 +301,24 @@ def get_chemical_ast(formula: str) -> dict[str, Any]:
     return parser.parse_formula()
 
 
-class ChemicalCounter:
+Element: TypeAlias = str
+"""For clarity, an Element is represented as a string symbol.
+The substitution from `str` to `Element` happens in building procedure"""
+
+
+class FormulaBuilder:
     """Calculates the count of each element in a chemical formula AST."""
 
     def __init__(self, ast: dict[str, Any]) -> None:
         self.ast = ast
 
-    def calculate(self) -> Counter[str]:
+    def calculate(self) -> Counter[Element]:
         return self._evaluate_formula(self.ast)
 
-    def _evaluate_element(self, element_info: dict[str, Any]) -> Counter[str]:
+    def _evaluate_element(self, element_info: dict[str, Any]) -> Counter[Element]:
         return Counter({element_info["symbol"]: element_info["count"]})
 
-    def _evaluate_term(self, term_info: dict[str, Any]) -> Counter[str]:
+    def _evaluate_term(self, term_info: dict[str, Any]) -> Counter[Element]:
         term_counter = Counter()
         match term_info:
             case {"symbol": _, "count": _}:
@@ -322,13 +327,13 @@ class ChemicalCounter:
                 term_counter += self._evaluate_group(term_info)
         return term_counter
 
-    def _evaluate_group(self, group_info: dict[str, Any]) -> Counter[str]:
+    def _evaluate_group(self, group_info: dict[str, Any]) -> Counter[Element]:
         group_counter = sum(
             (self._evaluate_term(term) for term in group_info["group"]), Counter()
         )
-        return scale_counter(group_counter, group_info["count"])
+        return scale(group_counter, group_info["count"])
 
-    def _evaluate_molecule(self, molecule_info: dict[str, Any]) -> Counter[str]:
+    def _evaluate_molecule(self, molecule_info: dict[str, Any]) -> Counter[Element]:
         molecule_counter = sum(
             (self._evaluate_term(term) for term in molecule_info["terms"]),
             Counter(),
@@ -338,23 +343,23 @@ class ChemicalCounter:
 
         return molecule_counter
 
-    def _evaluate_formula(self, formula: dict[str, Any]) -> Counter[str]:
-        total_counter: Counter[str] = Counter()
+    def _evaluate_formula(self, formula: dict[str, Any]) -> Counter[Element]:
+        total_counter: Counter[Element] = Counter()
         for molecule_info in formula["molecules"]:
             molecule = molecule_info["molecule"]
             count = molecule_info["count"]
             molecule_counter = self._evaluate_molecule(molecule)
-            scaled_counter = scale_counter(molecule_counter, count)
+            scaled_counter = scale(molecule_counter, count)
             total_counter.update(scaled_counter)
         return total_counter
 
 
-def _get_chemical_composition_from_ast(ast: dict[str, Any]) -> Counter[str]:
-    calculator = ChemicalCounter(ast)
+def _get_chemical_composition_from_ast(ast: dict[str, Any]) -> Counter[Element]:
+    calculator = FormulaBuilder(ast)
     return calculator.calculate()
 
 
-def get_chemical_composition(formula: str) -> Counter[str]:
+def get_chemical_composition(formula: str) -> Counter[Element]:
     ast = get_chemical_ast(formula)
     return _get_chemical_composition_from_ast(ast)
 
@@ -441,14 +446,34 @@ def get_equation_ast(equation: str) -> dict[str, Any]:
 
 
 # I won't bother using pydantic here ...
-@dataclass()
-class CountedFormula:
-    formula: str
-    count: int
-    composition: Counter[str]
+@dataclass(frozen=True)
+class Formula:
+    """A chemical formula with its element composition.
 
-    def __lt__(self, other: "CountedFormula") -> bool:
-        # string comparison is fine for our purpose of sorting
+    The formula is immutable once created (frozen dataclass).
+    The composition `Counter` is encapsulated to prevent modification.
+    """
+
+    formula: str
+    _composition: Counter[Element]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self._composition, Counter):
+            object.__setattr__(self, "_composition", Counter(self._composition))
+
+    @property
+    def composition(self) -> MappingProxyType[Element, int]:
+        return MappingProxyType(self._composition)
+
+    def __hash__(self) -> int:
+        return hash((self.formula, frozenset(self._composition.items())))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Formula):
+            return NotImplemented
+        return self.formula == other.formula and self._composition == other._composition
+
+    def __lt__(self, other: "Formula") -> bool:
         return self.formula < other.formula
 
 
@@ -456,8 +481,8 @@ class CountedFormula:
 class BaseEquation:
     """A chemical equation with reactants and products."""
 
-    reactants: list[CountedFormula]
-    products: list[CountedFormula]
+    reactants: Counter[Formula]
+    products: Counter[Formula]
 
     def __str__(self) -> str:
         is_single_reactant, is_single_product = (
@@ -465,34 +490,22 @@ class BaseEquation:
             len(self.products) == 1,
         )
         reactant_strs = [
-            f"{cf.count if cf.count != 1 else ''}{cf.formula}"
-            for cf in self.reactants
-            if (cf.count != 0 or is_single_reactant)
+            f"{c if c != 1 else ''}{f.formula}"
+            for f, c in self.reactants.items()
+            if (c != 0 or is_single_reactant)
         ]
         product_strs = [
-            f"{cf.count if cf.count != 1 else ''}{cf.formula}"
-            for cf in self.products
-            if (cf.count != 0 or is_single_product)
+            f"{c if c != 1 else ''}{f.formula}"
+            for f, c in self.products.items()
+            if (c != 0 or is_single_product)
         ]
-        # todo: In standard chemistry notation, should we use == or ->
         s = " + ".join(reactant_strs) + " == " + " + ".join(product_strs)
         return s.replace(" + -", " - ")
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, BaseEquation):
             return NotImplemented
-        return (
-            self.reactants.sort() == value.reactants.sort()
-            and self.products.sort() == value.products.sort()
-        )
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                tuple(sorted((cf.formula, cf.count) for cf in self.reactants)),
-                tuple(sorted((cf.formula, cf.count) for cf in self.products)),
-            )
-        )
+        return self.reactants == value.reactants and self.products == value.products
 
 
 class EquationBuilder:
@@ -507,20 +520,19 @@ class EquationBuilder:
         products = self._build_side(self.ast["products"])
         return BaseEquation(reactants=reactants, products=products)
 
-    def _build_side(self, side: list[dict[str, Any]]) -> list[CountedFormula]:
-        counted_formulas = []
+    def _build_side(self, side: list[dict[str, Any]]) -> Counter[Formula]:
+        counted_formulas: Counter[Formula] = Counter()
         for compound_info in side:
-            formula = compound_info["molecule"]
             count = compound_info["count"]
-            formula_str = formula["formula"].strip()
+
+            formula_ast = compound_info["molecule"]
+            formula_str = formula_ast["formula"].strip()
             if not formula_str:
                 raise RuntimeError("Empty formula in equation")
-            composition = _get_chemical_composition_from_ast(formula)
-            counted_formulas.append(
-                CountedFormula(
-                    formula=formula_str, count=count, composition=composition
-                )
-            )
+            composition = _get_chemical_composition_from_ast(formula_ast)
+
+            formula = Formula(formula_str, composition)
+            counted_formulas[formula] += count
         return counted_formulas
 
 
@@ -529,6 +541,4 @@ if __name__ == "__main__":
 
     equation_str = "2H2 + O2 -> 2H2O"
     ast = get_equation_ast(equation_str)
-    builder = EquationBuilder(ast)
-    equation = builder.build()
-    pprint(equation)
+    pprint(ast)
