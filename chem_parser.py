@@ -80,10 +80,11 @@ def tokenize(formula: str):
                 pos = 0
                 element_regex = r"|".join(ELEMENTS)
                 for m in re.finditer(element_regex, value):
-                    if m.start() != pos:
+                    if m.start() > pos:
                         yield Token(TokenType.ELEMENT, value[pos : m.start()])
-                        yield Token(TokenType.ELEMENT, m.group())
-                        pos = m.end()
+                    # The following statement is out of `if` scope to avoid missing first element
+                    yield Token(TokenType.ELEMENT, m.group())
+                    pos = m.end()
                 if pos != len(value):
                     yield Token(TokenType.ELEMENT, value[pos:])
                 continue
@@ -350,7 +351,7 @@ class FormulaBuilder:
             count = molecule_info["count"]
             molecule_counter = self._evaluate_molecule(molecule)
             scaled_counter = scale(molecule_counter, count)
-            total_counter.update(scaled_counter)
+            total_counter += scaled_counter
         return total_counter
 
 
@@ -471,7 +472,7 @@ class Formula:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Formula):
             return NotImplemented
-        return self.formula == other.formula and self._composition == other._composition
+        return self._composition == other._composition
 
     def __lt__(self, other: "Formula") -> bool:
         return self.formula < other.formula
@@ -501,6 +502,9 @@ class BaseEquation:
         ]
         s = " + ".join(reactant_strs) + " == " + " + ".join(product_strs)
         return s.replace(" + -", " - ")
+
+    def __repr__(self) -> str:
+        return f"Equation(reactants={self.reactants}, products={self.products})"
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, BaseEquation):
@@ -536,9 +540,13 @@ class EquationBuilder:
         return counted_formulas
 
 
+def get_formula(formula_str: str) -> Formula:
+    ast = get_chemical_ast(formula_str)
+    composition = _get_chemical_composition_from_ast(ast)
+    return Formula(formula_str, composition)
+
+
 if __name__ == "__main__":
     from pprint import pprint
 
-    equation_str = "2H2 + O2 -> 2H2O"
-    ast = get_equation_ast(equation_str)
-    pprint(ast)
+    pprint(get_chemical_composition("NH3 · H2O"))

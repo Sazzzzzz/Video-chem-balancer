@@ -14,7 +14,8 @@ from utils import Counter, scale
 
 
 class Equation(BaseEquation):
-    def __init__(self, equation_str):
+    # So they say combination is better than inheritance...
+    def __init__(self, equation_str: str):
         ast = get_equation_ast(equation_str)
         base = EquationBuilder(ast).build()
         super().__init__(base.reactants, base.products)
@@ -33,16 +34,28 @@ class Equation(BaseEquation):
         return inst
 
     @property
-    def elements(self) -> set[Element]:
-        return set(
-            element
-            for compound in self.reactants + self.products
-            for element in compound.composition.keys()
+    def elements(self) -> list[Element]:
+        """Elements involved in the equation. Ordered by occurrence in reactants and then products."""
+        return list(
+            dict.fromkeys(
+                chain.from_iterable(f.composition.keys() for f in self.substances)
+            )
         )
 
     @property
     def substances(self) -> chain[Formula]:
+        """Substances involved in the equation. Ordered by occurrence in reactants and then products."""
         return chain(self.reactants.keys(), self.products.keys())
+
+    @property
+    def coeff_matrix(self) -> sp.Matrix:
+        """Coefficient matrix representing the equation."""
+        return sp.Matrix(
+            [
+                [substance.composition.get(element, 0) for substance in self.substances]
+                for element in self.elements
+            ]
+        )
 
     def is_balanced(self) -> bool:
         """Check if the equation is balanced."""
@@ -58,13 +71,7 @@ class Equation(BaseEquation):
 
     def balance(self) -> list["Equation"]:
         """Balances the chemical equation using sympy with rref method."""
-        coeff_matrix = sp.Matrix(
-            [
-                [substance.composition.get(element, 0) for substance in self.substances]
-                for element in self.elements
-            ]
-        )
-        solutions = coeff_matrix.nullspace()
+        solutions = self.coeff_matrix.nullspace()
         equations: list[Equation] = []
         for solution in solutions:
             equation = deepcopy(self)
@@ -79,8 +86,6 @@ class Equation(BaseEquation):
 
 
 if __name__ == "__main__":
-    equation_str = "Cl- + ClO3 - + H+ + Cl2O + O2 -> Cl2 + H2O + ClO2"
+    equation_str = "3Cl2 + 6OH- == 5Cl- + ClO3 - + 3H2O"
     equation = Equation(equation_str)
-    eqs = equation.balance()
-    for eq in eqs:
-        print(eq)
+    print(equation.is_balanced())

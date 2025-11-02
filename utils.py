@@ -13,10 +13,17 @@ class Counter[T](dict[T, int]):
     def __add__(self, other: "Counter[T]") -> "Counter[T]":
         result = Counter[T]()
         for key in set(self) | set(other):
-            new_count = self[key] + other[key]
-            if new_count > 0:
+            new_count = self.get(key, 0) + other.get(key, 0)
+            if new_count != 0:
                 result[key] = new_count
         return result
+
+    def __iadd__(self, other: "Counter[T]") -> "Counter[T]":
+        for key in set(self) | set(other):
+            new_count = self.get(key, 0) + other.get(key, 0)
+            if new_count != 0:
+                self[key] = new_count
+        return self
 
     def __mul__(self, other: int) -> "Counter[T]":
         result = Counter[T]()
