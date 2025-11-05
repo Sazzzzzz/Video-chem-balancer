@@ -458,6 +458,7 @@ class Formula:
     formula: str
     _composition: Counter[Element]
 
+    # allow initialization with other types
     def __post_init__(self) -> None:
         if not isinstance(self._composition, Counter):
             object.__setattr__(self, "_composition", Counter(self._composition))
@@ -476,6 +477,9 @@ class Formula:
 
     def __lt__(self, other: "Formula") -> bool:
         return self.formula < other.formula
+
+    def __str__(self) -> str:
+        return self.formula
 
 
 @dataclass
