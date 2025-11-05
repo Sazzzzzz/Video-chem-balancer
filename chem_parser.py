@@ -515,6 +515,11 @@ class BaseEquation:
             return NotImplemented
         return self.reactants == value.reactants and self.products == value.products
 
+    def __hash__(self) -> int:
+        return hash(
+            (frozenset(self.reactants.items()), frozenset(self.products.items()))
+        )
+
 
 class EquationBuilder:
     """Calculates the element counts for each side of a chemical equation based on its AST.
