@@ -6,6 +6,14 @@
 
 % tex-fmt: off
 % cSpell: disable
+
+%================================
+% LOAD BASE CLASS
+%================================
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{ctexart}}
+\ProcessOptions\relax
+\LoadClass{ctexart}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGE IMPORTS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,6 +28,7 @@
     \let\@ifnextchar\new@ifnextchar
     \array{#1}}
 \makeatother
+\RequirePackage[a4paper,scale=0.8]{geometry}
 \RequirePackage{booktabs}  % better table lines
 % Provide support for minipage used in definition environment
 \RequirePackage{varwidth}
@@ -74,7 +83,7 @@
 \SaveVerb{grin}|:-]|
 \SaveVerb{naughty}|:P|
 \SaveVerb{relaxed}|:-|%
-% \setCJKmainfont[BoldFont=SimHei,ItalicFont=FangSong,BoldItalicFont=LiSu]{SimSun}
+\SaveVerb{froze}!:|!% % use ! as delimiter to avoid conflict with |
 % For cancel line
 \RequirePackage{cancel}
 % For code highlighting
@@ -93,9 +102,6 @@
     columns=flexible,
     tabsize=4
 }
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Custom commands
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %================================
 % PAGE SETUP
@@ -106,6 +112,7 @@
 \renewcommand{\thesubsubsection}{\arabic{subsubsection}}
 \catcode`\。=\active\newcommand{。}{．}
 \ctexset{section={format={\Large\raggedright\bfseries}}}
+
 %================================
 % MATH COMMANDS
 %================================
@@ -148,6 +155,9 @@
 
 \newfontfamily\DancingScript{Dancing Script OT}
 \newcommand{\Caffein}{\DancingScript{Caffein3}}
+% Predefine title, author and date
+\author{\Large \Caffein}
+\date{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % COLORS
@@ -160,17 +170,7 @@
 \definecolor{mycitecolor}{RGB}{0, 102, 204}
 \definecolor{myexamplecolor}{RGB}{56, 140, 70}
 \definecolor{mydoccolor}{RGB}{0, 73, 145}
-% Original colors
-% \definecolor{myclaimcolor}{RGB}{56, 140, 70}
-% \definecolor{mynotecolor}{RGB}{56, 140, 70}
-% \definecolor{mytheoremcolor}{RGB}{0,102,204}
-% \definecolor{mydefinitioncolor}{RGB}{235, 105,12}
-% \definecolor{myquotecolor}{RGB}{161,143,125}
-% \definecolor{mycitecolor}{RGB}{0, 102, 204}
-% \definecolor{myexamplecolor}{RGB}{255,128,0}
-% \definecolor{mydoccolor}{RGB}{141,64,13}
-
-% There is no ToC in article class
+\definecolor{myproblemcolor}{RGB}{56, 140, 70}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % New environments
@@ -200,8 +200,8 @@
 }
 {theorem}
 
-\newenvironment{theorem}[2][]{%
-    \begin{Theorem}{#2}{#1}%
+\NewDocumentEnvironment{theorem}{O{} O{}}{%
+    \begin{Theorem}{#1}{#2}%
     }{%
     \end{Theorem}%
 }
@@ -228,8 +228,8 @@
 }
 {definition}
 
-\newenvironment{definition}[2][]{%
-    \begin{Definition}{#2}{#1}%
+\NewDocumentEnvironment{definition}{O{} O{}}{%
+    \begin{Definition}{#1}{#2}%
     }{%
     \end{Definition}%
 }
@@ -256,11 +256,12 @@
 }
 {example}
 
-\newenvironment{example}[2][]{%
-    \begin{Example}{#2}{#1}%
+\NewDocumentEnvironment{example}{O{} O{}}{%
+    \begin{Example}{#1}{#2}%
     }{%
     \end{Example}%
 }
+
 %================================
 % CLAIM BOX
 %================================
@@ -283,10 +284,38 @@
 }
 {claim}
 
-\newenvironment{claim}[2][]{%
-    \begin{Claim}{#2}{#1}%
+\NewDocumentEnvironment{claim}{O{} O{}}{%
+    \begin{Claim}{#1}{#2}%
     }{%
     \end{Claim}%
+}
+
+%================================
+% PROBLEM BOX
+%================================
+\newtcbtheorem{Problem}{Problem}
+{%
+    enhanced,
+    breakable,
+    colback = myproblemcolor!10,
+    frame hidden,
+    boxrule = 0sp,
+    borderline west = {2pt}{0pt}{myproblemcolor},
+    sharp corners,
+    detach title,
+    before upper = \tcbtitle\par\smallskip,
+    coltitle = myproblemcolor!85!black,
+    fonttitle = \bfseries\sffamily,
+    description font = \mdseries,
+    separator sign none,
+    segmentation style={solid, myproblemcolor!85!black},
+}
+{problem}
+
+\NewDocumentEnvironment{problem}{O{} O{}}{%
+    \begin{Problem}{#1}{#2}%
+    }{%
+    \end{Problem}%
 }
 
 %================================
@@ -312,29 +341,45 @@
 }
 {note}
 
-\newenvironment{note}[2][]{%
-    \begin{Note}{#2}{#1}%
+\NewDocumentEnvironment{note}{O{} O{}}{%
+    \begin{Note}{#1}{#2}%
     }{%
     \end{Note}%
 }
 %================================
 % QUOTE BOX
 %================================
+\newfontfamily\RefLatinFont{Times New Roman Italic}[]
+\newCJKfontfamily\RefCJKFont{STFangsong}[
+    AutoFakeSlant = false,
+    BoldFont = Heiti SC Medium,
+]
 \newtcolorbox{refbox}[1][]{%
-enhanced,
-breakable,
-colback = myquotecolor!10,
-frame hidden,
-boxrule = 0sp,
-borderline west = {2pt}{0pt}{myquotecolor},
-sharp corners,
-fontupper = \ttfamily,
-#1
+    enhanced,
+    breakable,
+    colback = myquotecolor!10,
+    frame hidden,
+    boxrule = 0sp,
+    borderline west = {2pt}{0pt}{myquotecolor},
+    sharp corners,
+    fontupper = \RefLatinFont\RefCJKFont,
+    #1
 }
 \renewenvironment{quote}{%
 \begin{refbox}}{%
 \end{refbox}}
-% Extra Information
-% INFO: Use \mathclap and \substack to create multiline
-
-\endinput
+%================================
+% PROOF BOX
+%================================
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+    \pushQED{\qed}%
+    \RefCJKFont\topsep6\p@\@plus6\p@\relax
+    \trivlist
+\item[\hskip\labelsep
+        \RefLatinFont\RefCJKFont
+    #1\@addpunct{.}]\ignorespaces
+}{%
+    \popQED\endtrivlist\@endpefalse
+}
+\makeatother
