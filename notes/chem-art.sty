@@ -1,66 +1,65 @@
 % This preamble is heavily inspired by Soham Chatterjee's work in
 % https://github.com/sohamch08/Eye-Candy-Lecture-Notes-Theme
 
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{chem-art}[2025/11/16 v1.0]
+
 % tex-fmt: off
 % cSpell: disable
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGE IMPORTS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\usepackage{amsthm}
-\usepackage{amsmath}
-\usepackage{amssymb}
+\RequirePackage{amsthm}
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
 % For augmented matrices, from https://tex.stackexchange.com/questions/2233/whats-the-best-way-make-an-augmented-coefficient-matrix
 \makeatletter
 \renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
-  \hskip -\arraycolsep
-  \let\@ifnextchar\new@ifnextchar
-  \array{#1}}
+    \hskip -\arraycolsep
+    \let\@ifnextchar\new@ifnextchar
+    \array{#1}}
 \makeatother
-\usepackage{booktabs}  % 提供更专业的表格线条
+\RequirePackage{booktabs}  % better table lines
 % Provide support for minipage used in definition environment
-\usepackage{varwidth}
-\usepackage[style=numeric-comp,autocite=superscript]{biblatex}
-\usepackage{array}     % 增强的表格功能
+\RequirePackage{varwidth}
+\RequirePackage[style=numeric-comp,autocite=superscript]{biblatex}
+\RequirePackage{array} % enhanced table features
 % Underline and strikethrough
-\usepackage[normalem]{ulem}
-\usepackage[dvipsnames]{xcolor}
-\usepackage[most,many,breakable]{tcolorbox}
-\usepackage{extarrows}
+\RequirePackage[normalem]{ulem}
+\RequirePackage[dvipsnames]{xcolor}
+\RequirePackage[most,many,breakable]{tcolorbox}
+\RequirePackage{extarrows}
 % better \d symbol
-\usepackage{derivative}
-\usepackage{tikz-cd}
-% For \mathscr
-\usepackage{mathrsfs}
-\usepackage{graphicx}
-% Title and ToC format
-\usepackage{titletoc,titlesec}
-\usepackage{float}
-\usepackage{tikz}
-
-%! breqn are known to have compatibility issues with tikz
-%! This may cause hard-to-find bugs
+\RequirePackage{derivative}
+\RequirePackage{tikz-cd}
 % Make sure all math formulas are displayed in displaystyle
-% \usepackage{breqn}
+% \RequirePackage{breqn}
 % Some may argue that the use of displaystyle in inline formulas may
 % break line spacing and make the document look ugly. However, I
 % prefer to follow the choice of the textbook setting
 \everymath{\displaystyle}
-
+% For \mathscr
+\RequirePackage{mathrsfs}
+\RequirePackage{graphicx}
+% Title and ToC format
+\RequirePackage{titletoc,titlesec}
+\RequirePackage{float}
+\RequirePackage{tikz}
 % For bold math symbols
-\usepackage{bm}
-\usepackage{mathtools} % For \coloneqq
-\usepackage{hyperref}
+\RequirePackage{bm}
+\RequirePackage{mathtools} % For \coloneqq
+\RequirePackage{hyperref}
 \hypersetup{%
  colorlinks=true, linkcolor=mydoccolor!80, urlcolor=mydoccolor!80,
  citecolor=mycitecolor!80!black,
  bookmarksnumbered=true,
  bookmarksopen=true
 }
-\usepackage{cleveref}
-\usepackage{titling}
+\RequirePackage{cleveref}
+\RequirePackage{titling}
 % Use verb inside other environments
-\usepackage{fancyvrb}
+\RequirePackage{fancyvrb}
 \VerbatimFootnotes
 \SaveVerb{smile}|:-)|
 \SaveVerb{laugh}|:-D|
@@ -77,9 +76,9 @@
 \SaveVerb{relaxed}|:-|%
 % \setCJKmainfont[BoldFont=SimHei,ItalicFont=FangSong,BoldItalicFont=LiSu]{SimSun}
 % For cancel line
-\usepackage{cancel}
+\RequirePackage{cancel}
 % For code highlighting
-\usepackage{listings}
+\RequirePackage{listings}
 \newfontfamily{\Cascadia}{Cascadia Code}
 \lstset{language=Mathematica}
 \lstset{basicstyle={\Cascadia\footnotesize},
@@ -109,7 +108,7 @@
 \ctexset{section={format={\Large\raggedright\bfseries}}}
 %================================
 % MATH COMMANDS
-%==========================\hl{}===
+%================================
 \AtBeginDocument{%
 \renewcommand\Re{\operatorname{Re}}
 \renewcommand\Im{\operatorname{Im}}
@@ -337,3 +336,5 @@ fontupper = \ttfamily,
 \end{refbox}}
 % Extra Information
 % INFO: Use \mathclap and \substack to create multiline
+
+\endinput

@@ -5,7 +5,11 @@ edition = "2024"
 
 [lib]
 name = "chem_balancer"
-path = "src/lib.rs"
+path = "rust/src/lib.rs"
+
+[[bin]]
+name = "chem_balancer"
+path = "rust/src/main.rs"
 
 [dependencies]
 counter = "0.7.0"

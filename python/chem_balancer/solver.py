@@ -4,14 +4,14 @@ from typing import overload
 
 import sympy as sp
 
-from chem_parser import (
+from .parser import (
     BaseEquation,
     Element,
     EquationBuilder,
     Formula,
     get_equation_ast,
 )
-from utils import Counter, scale
+from .utils import Counter, scale
 
 
 class Equation(BaseEquation):

@@ -7,7 +7,7 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, NamedTuple, Optional, TypeAlias
 
-from utils import Counter, scale
+from .utils import Counter, scale
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
