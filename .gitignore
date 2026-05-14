@@ -3,7 +3,7 @@ test*.*
 /data/
 
 # LaTeX temp files
-*_temp/
+*_files/
 *.pdf
 
 # Byte-code files
