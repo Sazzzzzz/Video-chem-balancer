@@ -1,0 +1,48 @@
+\documentclass[varwidth=15cm]{standalone}
+\usepackage{../chem-graphs}
+% This figure must be compiled twice to get the correct positions of the arrows.
+
+\begin{document}
+\setlength{\arraycolsep}{8pt}
+\renewcommand\arraystretch{1.5}
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{4FeS2 + 11O2 -> 2Fe2O3 + 8SO2}
+        \]
+
+        \[
+            \begin{tikzcd}
+                & \ce{4FeS2} \arrow[dl] \arrow[dr] & \\
+                \ce{8SO2} \arrow[dr] & & \ce{2Fe2O3} \arrow[dl] \\
+                & \ce{11O2} &
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{FeS2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{O2}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{Fe2O3}} &
+                \multicolumn{1}{c}{\ce{SO2}} \\
+                \hline
+                \ce{Fe} & \tikzmarknode{fig2-1s}{1} & 0 &
+                \tikzmarknode{fig2-1e}{2} & 0\\
+                \ce{S} & \tikzmarknode{fig2-1's}{2} & 0 & 0 &
+                \tikzmarknode{fig2-1'e}{1}\\
+                \ce{O} & 0 & \tikzmarknode{fig2-2e}{2} &
+                \tikzmarknode{fig2-2s2}{3} &
+                \tikzmarknode{fig2-2s1}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig2-1s}{fig2-1e}{Step 1}
+            \arrowLR{fig2-1's}{fig2-1'e}{Step 1'}
+            \arrowsToOneRL{fig2-2s1}{fig2-2s2}{fig2-2e}{Step 2}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+\end{document}

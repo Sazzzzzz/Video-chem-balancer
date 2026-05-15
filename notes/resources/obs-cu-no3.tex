@@ -1,0 +1,55 @@
+\documentclass[varwidth=15cm]{standalone}
+\usepackage{../chem-graphs}
+% This figure must be compiled twice to get the correct positions of the arrows.
+
+\begin{document}
+\setlength{\arraycolsep}{8pt}
+\renewcommand\arraystretch{1.5}
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.42\textwidth}
+        \[
+            \ce{Cu + 2NO3^- + 4H+ -> Cu^{2+} + 2NO2 + 2H2O}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{2NO3^-} \arrow[r] & \ce{2NO2} \arrow[r] &
+                \ce{2H2O} \arrow[d] \\
+                & \ce{4H^+} & \ce{Cu} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.5\textwidth}
+        \[
+            \begin{array}{c|*{5}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{Cu}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NO3^-}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{H^+}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{Cu^{2+}}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NO2}} &
+                \multicolumn{1}{c}{\ce{H2O}} \\
+                \hline
+                \ce{Cu} & \tikzmarknode{5e}{1} & 0 & 0 &
+                \tikzmarknode{5s}{1} & 0 & 0\\
+                \ce{N} & 0 & \tikzmarknode{1s}{1} & 0 & 0
+                &\tikzmarknode{1e}{1} & 0\\
+                \ce{O} & 0 & \tikzmarknode{2s1}{3} & 0 & 0 &
+                \tikzmarknode{2s2}{2} & \tikzmarknode{2e}{1}\\
+                \ce{e-} & 0 & \tikzmarknode{4s1}{1} &
+                \tikzmarknode{4s2}{-1} & \tikzmarknode{4e}{-2} & 0 & 0\\
+                \ce{H} & 0 & 0 & \tikzmarknode{3e}{1} & 0 & 0 &
+                \tikzmarknode{3s}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowRL{5s}{5e}{Step 5}
+            \arrowLR{1s}{1e}{Step 1}
+            \arrowsToOneLR{2s1}{2s2}{2e}{Step 2}
+            \arrowsToOneLR{4s1}{4s2}{4e}{Step 4}
+            \arrowRL{3s}{3e}{Step 3}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+\end{document}

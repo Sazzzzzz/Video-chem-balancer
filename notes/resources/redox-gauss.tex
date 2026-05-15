@@ -1,0 +1,44 @@
+\documentclass[varwidth=15cm]{standalone}
+\usepackage{../chem-graphs}
+% This figure must be compiled twice to get the correct positions of the circles.
+
+\begin{document}
+$
+\begin{tikzcd}[column sep=large, row sep=large]
+    \begin{bmatrix}
+        1 & 0 & 1 & 0 & 0  \\
+        0 & 1 & 0 & 0 & 2  \\
+        0 & 0 & 2 & 1 & -2 \\
+        0 & 0 & 6 & 1 & 5  \\
+    \end{bmatrix}
+    \arrow[r, "R_{4} + 3R_{2}"] &
+    \begin{bmatrix}
+        1 & 0 & 1 & 0  & 0  \\
+        0 & 1 & 0 & 0  & 2  \\
+        0 & 0 & 2 & 1  & -2 \\
+        0 & 0 & 0 & -2 & 1  \\
+    \end{bmatrix}
+    \arrow[d, "R_{3}+2R_{4}"] \\
+    \subnode{matrix}{
+        \begin{bmatrix}
+            \subnode{pivot1}{1} & 0 & 0 &
+            \subnode{pivot2}{\frac{3}{2}}  & 0  \\
+            0 & 1 & 0 & 0  & 2  \\
+            0 & 0 & 2 & -3 & 0 \\
+            0 & 0 & 0 & -2 & 1  \\
+    \end{bmatrix}} &
+    \begin{bmatrix}
+        1 & 0 & 1 & 0  & 0  \\
+        0 & 1 & 0 & 0  & 2  \\
+        0 & 0 & 2 & -3 & 0 \\
+        0 & 0 & 0 & -2 & 1  \\
+    \end{bmatrix}
+    \arrow[l, "R_{1}-\frac{1}{2}R_{3}"]
+    \begin{tikzpicture}[overlay, remember picture]
+        \draw[red, thick, circle] (pivot1.center) circle (0.3cm);
+        \draw[red, thick, circle] (pivot2.center) circle (0.3cm);
+        \node[blue, above=0.1cm of matrix] {$n(\ce{Cu}): n(\ce{NO}) = 3:2$};
+    \end{tikzpicture}
+\end{tikzcd}
+$
+\end{document}

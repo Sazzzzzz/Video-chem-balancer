@@ -1,0 +1,45 @@
+\documentclass[varwidth=15cm]{standalone}
+\usepackage{../chem-graphs}
+% This figure must be compiled twice to get the correct positions of the arrows.
+\begin{document}
+\setlength{\arraycolsep}{8pt}
+\renewcommand\arraystretch{1.5}
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{3 Br2 + 8 NH3 -> 6 NH4Br + N2}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{3Br2} \arrow[r] & \ce{6NH4Br} \arrow[d] \\
+                \ce{N2} & \ce{8NH3} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{Br2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{NH3}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{NH4Br}} &
+                \multicolumn{1}{c}{\ce{N2}} \\
+                \hline
+                \ce{Br} & \tikzmarknode{fig3-1s}{2} & 0 &
+                \tikzmarknode{fig3-1e}{1} & 0\\
+                \ce{N} & 0 & \tikzmarknode{fig3-3s1}{1} &
+                \tikzmarknode{fig3-3s2}{1} & \tikzmarknode{fig3-3e}{2}\\
+                \ce{H} & 0 & \tikzmarknode{fig3-2e}{3}
+                &\tikzmarknode{fig3-2s}{4} & 0\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig3-1s}{fig3-1e}{Step 1}
+            \arrowsToOneLR{fig3-3s1}{fig3-3s2}{fig3-3e}{Step 3}
+            \arrowRL{fig3-2s}{fig3-2e}{Step 2}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+\end{document}

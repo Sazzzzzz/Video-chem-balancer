@@ -46,7 +46,7 @@
 \RequirePackage{extarrows}
 % better \d symbol
 \RequirePackage{derivative}
-\RequirePackage{tikz-cd}
+\RequirePackage{chem-graphs}
 % Make sure all math formulas are displayed in displaystyle
 % \RequirePackage{breqn}
 % Some may argue that the use of displaystyle in inline formulas may
@@ -59,7 +59,7 @@
 % Title and ToC format
 \RequirePackage{titletoc,titlesec}
 \RequirePackage{float}
-\RequirePackage{tikz}
+
 % For bold math symbols
 \RequirePackage{bm}
 \RequirePackage{mathtools} % For \coloneqq

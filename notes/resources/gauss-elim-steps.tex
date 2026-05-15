@@ -1,0 +1,26 @@
+\documentclass{standalone}
+\usepackage{../chem-graphs}
+
+\begin{document}
+$
+\begin{tikzcd}[column sep=large, row sep=large]
+    \systeme[xyzt]{
+        x + y + z^{\prime} = 0,
+        -2y -2z^{\prime} + 2t^{\prime} = 0,
+        -2z^{\prime} + 3t^{\prime} = 0
+    }
+    \arrow[r, "R_{2} - R_{3}", "R_{1} + \frac{1}{2}R_{3}"'] &
+    \systeme[xyzt]{
+        x + y + \frac{3}{2}t^{\prime} = 0,
+        -2y - t^{\prime} = 0,
+        -2z^{\prime} + 3t^{\prime} = 0
+    }
+    \arrow[r, "R_{1} + \frac{1}{2}R_{2}"] &
+    \systeme[xyzt]{
+        x + t^{\prime} = 0,
+        -2y - t^{\prime} = 0,
+        -2z^{\prime} + 3t^{\prime} = 0
+    }
+\end{tikzcd}
+$
+\end{document}

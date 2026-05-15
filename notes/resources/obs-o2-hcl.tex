@@ -1,0 +1,46 @@
+\documentclass[varwidth=15cm]{standalone}
+\usepackage{../chem-graphs}
+% This figure must be compiled twice to get the correct positions of the arrows.
+
+\begin{document}
+\setlength{\arraycolsep}{8pt}
+\renewcommand\arraystretch{1.5}
+\begin{center}
+    \noindent
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \ce{O2 + 4 HCl -> 2 Cl2 + 2 H2O}
+        \]
+
+        \[
+            \begin{tikzcd}
+                \ce{1O2} \arrow[r] & \ce{2H2O} \arrow[d] \\
+                \ce{2Cl2} & \ce{4HCl} \arrow[l]
+            \end{tikzcd}
+        \]
+    \end{minipage}%
+    \hspace{0.01\textwidth}
+    \begin{minipage}[c]{0.4\textwidth}
+        \[
+            \begin{array}{c|*{3}{c@{\grayplus}}c}
+                & \multicolumn{1}{c@{\grayplus}}{\ce{O2}} &
+                \multicolumn{1}{c@{\grayto}}{\ce{HCl}} &
+                \multicolumn{1}{c@{\grayplus}}{\ce{H2O}} &
+                \multicolumn{1}{c}{\ce{Cl2}} \\
+                \hline
+                \ce{O} & \tikzmarknode{fig1-1s}{2} & 0 &
+                \tikzmarknode{fig1-1e}{1} & 0\\
+                \ce{H} & 0 & \tikzmarknode{fig1-2e}{1} &
+                \tikzmarknode{fig1-2s}{2} & 0\\
+                \ce{Cl} & 0 & \tikzmarknode{fig1-3s}{1} & 0 &
+                \tikzmarknode{fig1-3e}{2}\\[1ex]
+            \end{array}
+        \]
+        \begin{tikzpicture}[overlay,remember picture]
+            \arrowLR{fig1-1s}{fig1-1e}{Step 1}
+            \arrowRL{fig1-2s}{fig1-2e}{Step 2}
+            \arrowLR{fig1-3s}{fig1-3e}{Step 3}
+        \end{tikzpicture}
+    \end{minipage}
+\end{center}
+\end{document}

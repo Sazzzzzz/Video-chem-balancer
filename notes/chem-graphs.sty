@@ -1,0 +1,71 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{chem-graphs}[2026/05/15 Common Graphs Style]
+
+\RequirePackage{xcolor}
+\RequirePackage[version=4]{mhchem}
+\RequirePackage{amsmath}
+\RequirePackage{systeme}
+\RequirePackage{tikz}
+\RequirePackage{tikz-cd}
+\usetikzlibrary{tikzmark,calc,shapes.misc,positioning}
+
+\newcommand{\grayplus}{\,\color{lightgray}+\,}
+\newcommand{\grayto}{\,\color{lightgray}\to\,}
+
+% Arrow commands: #1=start node, #2=end node, #3=label
+\newcommand{\arrowLR}[3]{%
+    \draw[->|,red,thick]
+    ([xshift=2pt]#1.south east)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#2.south west)
+    node[midway,below,blue,font=\small] {#3};
+}
+
+% xmark and cmark from
+% https://tex.stackexchange.com/questions/42619/xmark-that-complements-the-ams-checkmark/655719#655719
+\newcommand{\xmark}{%
+    \tikz[scale=0.23] {
+        \draw[line width=0.7,line cap=round] (0,0) to [bend left=6] (1,1);
+        \draw[line width=0.7,line cap=round] (0.2,0.95) to [bend
+        right=3] (0.8,0.05);
+}}
+\newcommand{\cmark}{%
+    \tikz[scale=0.23] {
+        \draw[line width=0.7,line cap=round] (0.25,0) to [bend left=10] (1,1);
+        \draw[line width=0.8,line cap=round] (0,0.35) to [bend
+        right=1] (0.23,0);
+}}
+
+\newcommand{\arrowRL}[3]{%
+    \draw[->|,red,thick]
+    ([xshift=-2pt]#1.south west)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#2.south east)
+    node[midway,below,blue,font=\small] {#3};
+}
+
+\newcommand{\arrowsToOneRL}[4]{%
+    % #1 = first start node, #2 = second start node, #3 = end node, #4 = label
+    \draw[->,red,thick]
+    ([xshift=-2pt]#1.south west)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#3.south east)
+    node[midway,below,blue,font=\small] {#4};
+    \draw[->,red,thick]
+    (#2.south)
+    .. controls ++(-0.3cm,-0.2cm) and ++(0.3cm,-0.2cm) ..
+    ([xshift=2pt]#3.south east);
+}
+
+\newcommand{\arrowsToOneLR}[4]{%
+    % #1 = first start node, #2 = second start node, #3 = end node, #4 = label
+    \draw[->,red,thick]
+    ([xshift=2pt]#1.south east)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#3.south west)
+    node[midway,below,blue,font=\small] {#4};
+    \draw[->,red,thick]
+    (#2.south)
+    .. controls ++(0.3cm,-0.2cm) and ++(-0.3cm,-0.2cm) ..
+    ([xshift=-2pt]#3.south west);
+}
