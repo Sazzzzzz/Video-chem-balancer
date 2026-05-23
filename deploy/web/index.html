@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChemBalancer — Hilbert Basis Equation Balancer</title>
+    <meta name="description"
+        content="Chemical equation balancer using the Contejean–Devie algorithm to enumerate all minimal integer solutions via the Hilbert basis of the stoichiometric cone." />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="8" cy="12" r="3" />
+                    <circle cx="16" cy="8" r="2.5" />
+                    <circle cx="16" cy="16" r="2.5" />
+                    <circle cx="22" cy="14" r="1.5" />
+                    <line x1="11" y1="12" x2="13.5" y2="9.5" />
+                    <line x1="11" y1="12" x2="13.5" y2="14.5" />
+                    <line x1="18.5" y1="8" x2="20.5" y2="12.5" />
+                    <line x1="18.5" y1="16" x2="20.5" y2="13.5" />
+                </svg>
+                <span>ChemBalancer</span>
+            </a>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <main class="main">
+        <section class="hero">
+            <h1 class="hero-title">
+                Chemical Equation
+                <span class="hero-title-block">Balancer</span>
+            </h1>
+            <p class="hero-subtitle">
+                Powered by the <strong>Contejean–Devie algorithm</strong> —
+                enumerates the <strong>Hilbert basis</strong> of the
+                stoichiometric cone to find <em>all</em> minimal
+                integer-balanced solutions, not just one.
+            </p>
+        </section>
+
+        <section class="balancer-section">
+            <div class="balancer-card">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="equation-input" class="equation-input" placeholder="e.g. H2 + O2 = H2O"
+                            autocomplete="off" spellcheck="false" aria-label="Chemical equation input" />
+                        <button id="balance-btn" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                class="btn-icon">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>Balance</span>
+                        </button>
+                    </div>
+                    <div class="input-hints">
+                        <span class="hint">Use <code>=</code>, <code>==</code>, or
+                            <code>-></code> as separator</span>
+                        <button id="example-btn" class="btn btn-ghost">
+                            Try Example
+                        </button>
+                    </div>
+                </div>
+
+                <div class="result-area" id="result-area">
+                    <div class="result-header">
+                        <span class="result-label">Result</span>
+                        <button id="copy-btn" class="btn btn-icon-only" title="Copy" style="display: none">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="result-content" class="result-content">
+                        <p class="placeholder-text">
+                            Your balanced equation will appear here
+                        </p>
+                    </div>
+                </div>
+
+                <div id="error-area" class="error-area" style="display: none"></div>
+
+                <div id="solutions-area" class="solutions-area" style="display: none">
+                    <h3 class="solutions-title">
+                        All Hilbert Basis Solutions
+                    </h3>
+                    <div id="solutions-list" class="solutions-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="examples-section">
+            <h2 class="section-title">Try an example</h2>
+            <div class="examples-grid">
+                <button class="example-chip" data-equation="H2 + O2 = H2O">
+                    H₂ + O₂ → H₂O
+                </button>
+                <button class="example-chip" data-equation="Fe + O2 = Fe2O3">
+                    Fe + O₂ → Fe₂O₃
+                </button>
+                <button class="example-chip" data-equation="CH4 + O2 = CO2 + H2O">
+                    CH₄ + O₂ → CO₂ + H₂O
+                </button>
+                <button class="example-chip" data-equation="KMnO4 + HCl = KCl + MnCl2 + H2O + Cl2">
+                    KMnO₄ + HCl → KCl + MnCl₂ + H₂O + Cl₂
+                </button>
+                <button class="example-chip" data-equation="C6H12O6 + O2 = CO2 + H2O">
+                    C₆H₁₂O₆ + O₂ → CO₂ + H₂O
+                </button>
+                <button class="example-chip"
+                    data-equation="NH4ClO4 + HNO3 + HCl + H2O -> H5ClO6 + N2O + NO + NO2 + Cl2">
+                    NH₄ClO₄ + HNO₃ + HCl + H₂O → … (17 solutions)
+                </button>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>How it works</h2>
+            <p>
+                Most online balancers solve a linear system and stop at the
+                first solution. This one uses the
+                <strong>Contejean–Devie algorithm</strong> to compute the
+                <strong>Hilbert basis</strong> — the set of all minimal,
+                irreducible integer vectors that satisfy atom conservation.
+            </p>
+            <p>
+                For simple equations the result is a single balanced form.
+                For complex systems (like the NH₄ClO₄ example above) the
+                algorithm enumerates every chemically distinct balanced
+                pathway — up to 17 independent solutions.
+            </p>
+            <p class="tech-note">
+                Built in <strong>Rust</strong>, compiled to
+                <strong>WebAssembly</strong>. All computation runs locally
+                in your browser. No server, no tracking.
+            </p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>ChemBalancer &copy; 2026 — Rust + WASM</p>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

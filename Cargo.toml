@@ -1,0 +1,21 @@
+[package]
+name = "chem-balancer"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "deploy/src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "chem-balancer-cli"
+path = "deploy/src/main.rs"
+
+
+[dependencies]
+anyhow = "1.0.102"
+regex = "1.12.3"
+thiserror = "2.0.18"
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
