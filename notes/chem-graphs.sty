@@ -12,6 +12,9 @@
 
 \newcommand{\grayplus}{\,\color{lightgray}+\,}
 \newcommand{\grayto}{\,\color{lightgray}\to\,}
+\newlength{\arrowlen}
+\settowidth{\arrowlen}{\(\longrightarrow\)}
+\newcommand{\dash}{\ \rule[0.5ex]{\arrowlen}{0.4pt}\ }
 
 % Arrow commands: #1=start node, #2=end node, #3=label
 \newcommand{\arrowLR}[3]{%
