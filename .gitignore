@@ -35,3 +35,9 @@ instance/
 
 # Manim
 */media
+
+# agent
+.agent/
+.claude/
+memory/
+skills-lock.json
