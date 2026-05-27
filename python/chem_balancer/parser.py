@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple
 
 from .utils import Counter, scale
 
@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 # Two letter element symbols should appear before one letter symbols to avoid partial matches
 
-ELEMENTS_STR = """He Li Be Ne Na Mg Al Si Cl Ar Ca Sc Ti Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr 
-Rb Sr Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu 
-Hf Ta Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa Np Pu Am Cm Bk Cf Es Fm Md No Lr 
+ELEMENTS_STR = """He Li Be Ne Na Mg Al Si Cl Ar Ca Sc Ti Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr
+Rb Sr Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu
+Hf Ta Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa Np Pu Am Cm Bk Cf Es Fm Md No Lr
 Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og H B C N O F P S K V Y I W U"""
 ELEMENTS = ELEMENTS_STR.split()
 
@@ -113,7 +113,7 @@ class FormulaParser:
         self.pos = 0
         self.tokens = tokens
         self.is_parsing_equation = is_parsing_equation
-        self.current_token: Optional[Token] = self.tokens[0] if tokens else None
+        self.current_token: Token | None = self.tokens[0] if tokens else None
 
     def advance(self) -> None:
         """Moves to the next token. Ignoring all whitespaces"""
@@ -302,7 +302,7 @@ def get_chemical_ast(formula: str) -> dict[str, Any]:
     return parser.parse_formula()
 
 
-Element: TypeAlias = str
+type Element = str
 """For clarity, an Element is represented as a string symbol.
 The substitution from `str` to `Element` happens in building procedure"""
 

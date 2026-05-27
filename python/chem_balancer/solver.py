@@ -101,7 +101,7 @@ class Equation(BaseEquation):
             sign = 1 if solution[0] > 0 else -1
             solution = [term * sign * lcm for term in solution]
             counted_formulas = Counter(
-                {f: c for f, c in zip(equation.substances, solution)}
+                dict(zip(equation.substances, solution, strict=False))
             )
             balanced_equation = Equation.from_counted_formula(counted_formulas)
             equations.append(balanced_equation)
@@ -124,7 +124,7 @@ class Equation(BaseEquation):
         """Determine whether the equation is solvable by observation.
         If solvable, return one possible order of substances to observe."""
         row_indexes = {
-            row_index: set(col_index for col_index, elem in enumerate(row) if elem != 0)
+            row_index: {col_index for col_index, elem in enumerate(row) if elem != 0}
             for row_index, row in enumerate(self.coeff_matrix.tolist())
         }
         possible_starts = {
