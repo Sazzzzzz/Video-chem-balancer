@@ -1,9 +1,10 @@
 use crate::domain::{Counter, Element, Equation, Formula};
 use anyhow::{Result, anyhow};
 use regex::Regex;
+use serde::Serialize;
 use std::sync::OnceLock;
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy, Serialize)]
 pub enum TokenType {
     Preprocessing,
     Electron,
@@ -23,7 +24,7 @@ pub enum TokenType {
     Mismatch,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Token {
     pub ttype: TokenType,
     pub value: String,
@@ -352,11 +353,25 @@ impl FormulaParser {
             if let Some(pk) = self.peek(1)
                 && pk.is_conjunction()
             {
-                return Ok(AstTerm {
-                    symbol: Some(element),
-                    count,
-                    group: None,
-                });
+                // If the conjunction immediately after the number is itself
+                // followed by whitespace, it's likely a separator between
+                // compounds (e.g. "O3+ H2O2" where "+" separates compounds),
+                // so treat the number as the element count. If there's no
+                // whitespace after the conjunction (e.g. "Fe2+"), treat it
+                // as a charge indicator and leave the number for charge parsing.
+                let mut treat_as_charge = true;
+                if let Some(after) = self.peek(2)
+                    && after.ttype == TokenType::Whitespace
+                {
+                    treat_as_charge = false;
+                }
+                if treat_as_charge {
+                    return Ok(AstTerm {
+                        symbol: Some(element),
+                        count,
+                        group: None,
+                    });
+                }
             }
             count = tok.value.parse::<i64>().unwrap_or(1);
             self.advance();
@@ -474,6 +489,8 @@ pub fn get_chemical_composition(formula: &str) -> Result<Counter<Element>> {
     Ok(FormulaBuilder::calculate(&ast))
 }
 
+type EquationResult = (Vec<(AstFormula, i64)>, Vec<(AstFormula, i64)>);
+
 pub struct EquationParser {
     tokens: Vec<Token>,
     pos: usize,
@@ -505,7 +522,7 @@ impl EquationParser {
         }
     }
 
-    pub fn parse_equation(&mut self) -> Result<(Vec<(AstFormula, i64)>, Vec<(AstFormula, i64)>)> {
+    pub fn parse_equation(&mut self) -> Result<EquationResult> {
         let reactants = self.parse_compound_list()?;
 
         let mut has_equals = false;

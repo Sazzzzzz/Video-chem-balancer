@@ -1,13 +1,13 @@
-import init, { balance_equation } from "./pkg/chem_balancer.js";
+import init, { balance } from "./pkg/chem_balancer.js";
 
 const equationInput = document.getElementById("equation-input");
 const balanceBtn = document.getElementById("balance-btn");
-const exampleBtn = document.getElementById("example-btn");
-const resultContent = document.getElementById("result-content");
+const loadingArea = document.getElementById("loading-area");
 const errorArea = document.getElementById("error-area");
-const copyBtn = document.getElementById("copy-btn");
-const solutionsArea = document.getElementById("solutions-area");
-const solutionsList = document.getElementById("solutions-list");
+const resultArea = document.getElementById("result-area");
+const matrixBody = document.getElementById("matrix-body");
+const hilbertBody = document.getElementById("hilbert-body");
+const panelCopyBtns = document.querySelectorAll(".panel-copy-btn");
 const themeToggle = document.getElementById("theme-toggle");
 const exampleChips = document.querySelectorAll(".example-chip");
 
@@ -30,21 +30,61 @@ async function initWasm() {
         await init();
         wasmReady = true;
     } catch (err) {
-        resultContent.innerHTML =
-            '<p class="placeholder-text" style="color:var(--error)">Failed to load engine. Refresh the page.</p>';
+        matrixBody.innerHTML =
+            '<p class="placeholder-text" style="color:var(--error)">无法加载引擎。请刷新页面。</p>';
+        hilbertBody.innerHTML =
+            '<p class="placeholder-text" style="color:var(--error)">无法加载引擎。请刷新页面。</p>';
     }
 }
 
-function balance(raw) {
+// ---- Equation highlighting ----
+
+function highlightEquation(tokens) {
+    if (typeof tokens === "string") return escapeHtml(tokens);
+
+    return tokens
+        .map((token) => {
+            let val = escapeHtml(token.value);
+            let cssClass = "";
+
+            switch (token.ttype) {
+                case "Element":
+                    cssClass = "hl-element";
+                    break;
+                case "Number":
+                    cssClass = "hl-number";
+                    break;
+                case "Equals":
+                    cssClass = "hl-separator";
+                    val = "→";
+                    break;
+                case "Plus":
+                case "Minus":
+                    cssClass = "hl-separator";
+                    break;
+            }
+
+            if (cssClass) {
+                return `<span class="${cssClass}">${val}</span>`;
+            }
+            return val;
+        })
+        .join("");
+}
+
+// ---- Core balance logic ----
+
+function balanceEquation(raw) {
     if (!wasmReady) {
-        showError("Engine loading, try again.");
+        showError("引擎仍在加载，请稍候...");
         return;
     }
     if (!raw.trim()) {
-        showError("Enter a chemical equation.");
+        showError("请输入化学方程式");
         return;
     }
 
+    // Normalize separators to ==
     const eq = raw
         .replace(/→/g, "==")
         .replace(/⇌/g, "==")
@@ -52,101 +92,177 @@ function balance(raw) {
         .replace(/->/g, "==")
         .replace(/(?<!-)=(?!=)/g, "==");
 
-    clear();
+    hideResults();
+    showLoading();
 
-    try {
-        const data = JSON.parse(balance_equation(eq));
-        if (data.error) {
-            showError(data.error);
-            return;
-        }
-        if (!data.balanced?.length) {
-            resultContent.innerHTML =
-                '<p class="placeholder-text">No solution found.</p>';
-            return;
-        }
+    // Yield to the event loop so the spinner paints before blocking WASM
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            try {
+                const matrixData = JSON.parse(balance(eq, "matrix"));
+                const dualSolutionsNode =
+                    document.querySelector(".dual-solutions");
+                const mPanelTitle = document.querySelector(
+                    "#matrix-panel .solution-panel-title",
+                );
+                const hPanel = document.getElementById("hilbert-panel");
 
-        const main = data.balanced[0].replace(/\s*==\s*/g, " → ");
-        resultContent.innerHTML = `<div class="balanced-equation">${main}</div>`;
-        copyBtn.style.display = "flex";
-        copyBtn.dataset.copyText = main;
+                hideLoading();
 
-        if (data.balanced.length > 1) {
-            solutionsArea.style.display = "block";
-            solutionsList.innerHTML = data.balanced
-                .map((s, i) => {
-                    const f = s.replace(/\s*==\s*/g, " → ");
-                    return `<div class="solution-item"><span class="solution-index">#${i + 1}</span><span>${f}</span></div>`;
-                })
-                .join("");
-        }
-    } catch (err) {
-        showError("Error: " + err.message);
+                if (
+                    matrixData.error &&
+                    matrixData.error.includes("Failed to parse")
+                ) {
+                    showError(matrixData.error);
+                    return;
+                }
+
+                if (matrixData.balanced && matrixData.balanced.length === 1) {
+                    // Only 1 solution => short circuit
+                    renderPanel("matrix", matrixData);
+                    dualSolutionsNode.classList.add("single-col");
+                    hPanel.style.display = "none";
+                    if (mPanelTitle) {
+                        mPanelTitle.innerHTML = "矩阵法 / Hilbert基 解";
+                    }
+                    resultArea.style.display = "grid";
+                } else {
+                    const hilbertData = JSON.parse(balance(eq, "hilbert"));
+                    renderPanel("matrix", matrixData);
+                    renderPanel("hilbert", hilbertData);
+
+                    dualSolutionsNode.classList.remove("single-col");
+                    hPanel.style.display = ""; // reset to CSS default
+                    if (mPanelTitle) {
+                        mPanelTitle.innerHTML = "矩阵法 解";
+                    }
+                    resultArea.style.display = "grid";
+                }
+            } catch (err) {
+                hideLoading();
+                showError("意外错误: " + err.message);
+            }
+        }, 50);
+    });
+}
+
+function renderPanel(method, data) {
+    const body = method === "matrix" ? matrixBody : hilbertBody;
+
+    if (data.error) {
+        body.innerHTML = `<div class="panel-error">${escapeHtml(data.error)}</div>`;
+        return;
     }
+
+    if (!data.balanced || data.balanced.length === 0) {
+        body.innerHTML = '<p class="placeholder-text">未找到求解</p>';
+        return;
+    }
+
+    const solutions = data.balanced;
+
+    if (solutions.length === 1) {
+        body.innerHTML = `<div class="balanced-equation">${highlightEquation(solutions[0])}</div>`;
+    } else {
+        body.innerHTML = solutions
+            .map((s, i) => {
+                return `<div class="solution-item">
+                    <span class="solution-index">#${i + 1}</span>
+                    <span>${highlightEquation(s)}</span>
+                </div>`;
+            })
+            .join("");
+    }
+}
+
+// ---- UI helpers ----
+
+function showLoading() {
+    loadingArea.style.display = "flex";
+    errorArea.style.display = "none";
+    resultArea.style.display = "none";
+}
+
+function hideLoading() {
+    loadingArea.style.display = "none";
+}
+
+function hideResults() {
+    errorArea.style.display = "none";
+    resultArea.style.display = "none";
 }
 
 function showError(msg) {
+    hideLoading();
     errorArea.style.display = "block";
     errorArea.textContent = msg;
-    resultContent.innerHTML =
-        '<p class="placeholder-text">Your balanced equation will appear here</p>';
-    copyBtn.style.display = "none";
-    solutionsArea.style.display = "none";
+    resultArea.style.display = "none";
 }
 
-function clear() {
-    errorArea.style.display = "none";
-    errorArea.textContent = "";
-    copyBtn.style.display = "none";
-    solutionsArea.style.display = "none";
-    solutionsList.innerHTML = "";
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
 }
 
-// Copy
-copyBtn.addEventListener("click", () => {
-    const text = copyBtn.dataset.copyText;
-    if (!text) return;
-    navigator.clipboard
-        .writeText(text)
-        .then(() => {
-            const toast = Object.assign(document.createElement("div"), {
-                className: "toast",
-                textContent: "Copied!",
-            });
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 1800);
-        })
-        .catch(() => {});
+// ---- Copy buttons ----
+
+panelCopyBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const panel = btn.dataset.panel;
+        const body = panel === "matrix" ? matrixBody : hilbertBody;
+
+        let text;
+        const items = body.querySelectorAll(".solution-item span:last-child");
+        const single = body.querySelector(".balanced-equation");
+
+        if (items.length > 0) {
+            text = Array.from(items)
+                .map((span, i) => `${i + 1}. ${span.textContent}`)
+                .join("\n");
+        } else if (single) {
+            text = single.textContent;
+        } else {
+            return;
+        }
+
+        navigator.clipboard
+            .writeText(text)
+            .then(() => {
+                showToast("已复制");
+            })
+            .catch(() => {});
+    });
 });
 
-// Events
-balanceBtn.addEventListener("click", () => balance(equationInput.value));
+function showToast(msg) {
+    const toast = Object.assign(document.createElement("div"), {
+        className: "toast",
+        textContent: msg,
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1800);
+}
+
+// ---- Event listeners ----
+
+balanceBtn.addEventListener("click", () =>
+    balanceEquation(equationInput.value),
+);
 equationInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
-        balance(equationInput.value);
+        balanceEquation(equationInput.value);
     }
-});
-
-exampleBtn.addEventListener("click", () => {
-    const pool = [
-        "H2 + O2 = H2O",
-        "Fe + O2 = Fe2O3",
-        "CH4 + O2 = CO2 + H2O",
-        "KMnO4 + HCl = KCl + MnCl2 + H2O + Cl2",
-        "C6H12O6 + O2 = CO2 + H2O",
-        "NH4ClO4 + HNO3 + HCl + H2O -> H5ClO6 + N2O + NO + NO2 + Cl2",
-    ];
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    equationInput.value = pick;
-    balance(pick);
 });
 
 exampleChips.forEach((chip) => {
     chip.addEventListener("click", () => {
         equationInput.value = chip.dataset.equation;
-        balance(chip.dataset.equation);
+        balanceEquation(chip.dataset.equation);
     });
 });
+
+// ---- Start ----
 
 initWasm();
