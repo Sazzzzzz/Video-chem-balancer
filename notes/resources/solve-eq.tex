@@ -8,27 +8,27 @@
 \begin{document}
 $
 \begin{tikzcd}[column sep=large, row sep=large]
-    \systeme[xyzt]{%
-        x + y + z^{\prime} = 0,
-        2x + 2t^{\prime} = 0,
-        2y + t^{\prime} = 0
+    \systeme[sort={x, y, z', t' = {}}]{%
+        x + y + z' = 0,
+        2x + 2t' = 0,
+        2y + t' = 0
     }
     \arrow[r] &
-    \systeme[xyzt]{%
-        x + y + z^{\prime} = 0,
-        -2y - 2z^{\prime} + 2t^{\prime} = 0,
-        2y +t^{\prime} = 0
+    \systeme[sort={x, y, z', t' = {}}]{%
+        x + y + z' = 0,
+        -2y - 2z' + 2t' = 0,
+        2y +t' = 0
     }
     \arrow[d] \\
-    \systeme[xyzt]{%
-        x + t^{\prime} = 0,
-        y + \frac{1}{2}t^{\prime} = 0,
-        z^{\prime} - \frac{3t^{\prime}}{2} = 0
+    \systeme[sort={x, y, z', t' = {}}]{%
+        x + t' = 0,
+        y + \frac{1}{2}t' = 0,
+        z' - \frac{3}{2}t' = 0
     } &
-    \systeme[xyzt]{%
-        x + y + z^{\prime} = 0,
-        -2y -2z^{\prime} + 2t^{\prime} = 0,
-        -2z^{\prime} + 3t^{\prime} = 0
+    \systeme[sort={x, y, z', t' = {}}]{%
+        x + y + z' = 0,
+        -2y -2z' + 2t' = 0,
+        -2z' + 3t' = 0
     }
     \arrow[l]
 \end{tikzcd}

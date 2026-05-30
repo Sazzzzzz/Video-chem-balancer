@@ -3,16 +3,16 @@
 \begin{document}
 $
 \begin{tikzcd}[column sep=large, row sep=large]
-    \systeme[xyzt]{
-        x + y + z^{\prime} = 0,
-        -2y - 2z^{\prime} + 2t^{\prime} = 0,
-        2y +t^{\prime} = 0
+    \systeme[sort={x, y, z', t' = {}}]{
+        x + y + z' = 0,
+        -2y - 2z' + 2t' = 0,
+        2y +t' = 0
     }
     \arrow[r, "R_{2} - 2R_{1}"] &
-    \systeme[xyzt]{
-        x + y + z^{\prime} = 0,
-        -2y - 2z^{\prime} + 2t^{\prime} = 0,
-        -2z^{\prime} + 3t^{\prime} = 0
+    \systeme[sort={x, y, z', t' = {}}]{
+        x + y + z' = 0,
+        -2y - 2z' + 2t' = 0,
+        -2z' + 3t' = 0
     }
 \end{tikzcd}
 $
